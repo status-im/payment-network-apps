@@ -4,6 +4,7 @@ import EmbarkJS from 'Embark/EmbarkJS';
 
 import WalletsList from '../containers/WalletsList';
 import NewWalletDialog from '../containers/NewWalletDialog';
+import TapWalletFactory from 'Embark/contracts/TapWalletFactory';
 
 import { withStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
@@ -11,7 +12,10 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Avatar from '@material-ui/core/Avatar';
+import CircularProgress from '@material-ui/core/CircularProgress';
+
 import {newWalletSelectIcon} from "../actions"
+import { compressedAddress } from '../utils';
 
 const styles = theme => ({
   container: {
@@ -19,16 +23,22 @@ const styles = theme => ({
     [theme.breakpoints.only('xs')]: {
       paddingTop: 48,
     },
+  },
+  loading: {
+    textAlign: "center",
+    padding: 50
   }
 });
 
-// const icons = ["💳", "👛", "💸"]
 const App = (props) => {
-  const loading = <div>loading...</div>;
+  const loading = <div className={props.classes.loading}>
+    <CircularProgress />
+  </div>;
 
-  const body = (props.loadingWeb3 || props.loadingOwner) ?
-    loading :
-    <WalletsList />;
+  let body = loading;
+  if (!props.loadingWeb3 && !props.loadingOwner) {
+    body = <WalletsList />
+  }
 
   return (
     <div className={props.classes.container}>
@@ -37,6 +47,9 @@ const App = (props) => {
         <Toolbar>
           <Typography variant="h6" color="inherit">
             Keycard Wallet
+            <Typography variant="caption" color="inherit">
+              {compressedAddress(TapWalletFactory.address)} (Net ID: {props.networkID || "-"})
+            </Typography>
           </Typography>
         </Toolbar>
       </AppBar>

@@ -14,7 +14,7 @@ export const ethereumLoadError = (err) => ({
 });
 
 export const ETHEREUM_LOADED = 'ETHEREUM_LOADED';
-export const ethereumLoaded = (err) => ({
+export const ethereumLoaded = () => ({
   type: ETHEREUM_LOADED
 });
 
@@ -68,6 +68,20 @@ export const walletLoaded = (index, address, name, keycard, value, icon) => ({
   icon
 });
 
+export const NETWORK_ID_LOADED = "NETWORK_ID_LOADED";
+export const networkIDLoaded = (id) => ({
+  type: NETWORK_ID_LOADED,
+  id
+});
+
+export const loadNetworkID = () => {
+  return (dispatch) => {
+    web3.eth.net.getId()
+      .then((id) => dispatch(networkIDLoaded(id)))
+      .catch((id) => console.error(id))
+  }
+}
+
 export const enableEthereum = () => {
   if (window.ethereum) {
     window.web3 = new Web3(ethereum);
@@ -75,6 +89,7 @@ export const enableEthereum = () => {
       ethereum.enable()
         .then(() => {
           dispatch(ethereumLoaded());
+          dispatch(loadNetworkID());
           dispatch(loadOwner());
         })
         .catch((err) => dispatch(ethereumLoadError(err)))
@@ -82,7 +97,10 @@ export const enableEthereum = () => {
   } else if (window.web3) {
     return (dispatch) => {
       dispatch(ethereumLoaded());
-      window.setTimeout(() => dispatch(loadOwner()), 200);
+      window.setTimeout(() => {
+        dispatch(loadNetworkID());
+        dispatch(loadOwner())
+      }, 200)
     }
   } else {
     return ethereumLoadError("no ethereum browser");
@@ -97,7 +115,8 @@ export const loadOwner = () => {
         const owner = accounts[0];
         dispatch(ownerLoaded(owner))
         dispatch(loadWallets(owner))
-      });
+      })
+      .catch((err) => console.error(err));
   }
 };
 
@@ -112,6 +131,7 @@ export const loadWallets = (owner) => {
           dispatch(loadWallet(owner, i))
         };
       })
+      .catch((err) => console.error(err))
   }
 };
 

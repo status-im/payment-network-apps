@@ -12,7 +12,7 @@ import 'typeface-roboto';
 import { install } from '@material-ui/styles';
 install();
 
-import App from './components/App';
+import App from './containers/App';
 
 const store = createStore(rootReducer,
   applyMiddleware(

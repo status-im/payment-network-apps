@@ -6,6 +6,8 @@ import ListItem from '@material-ui/core/ListItem';
 import Avatar from '@material-ui/core/Avatar';
 import ListItemText from '@material-ui/core/ListItemText';
 import Divider from '@material-ui/core/Divider';
+import CircularProgress from '@material-ui/core/CircularProgress';
+
 import {
   compressedAddress,
   isEmptyAddress,
@@ -34,8 +36,13 @@ const WalletsListItem = ({ wallet }) => {
   return (
     <React.Fragment>
       <ListItem button>
-        <Avatar>{wallet.icon}</Avatar>
-        <StyledListItemText primary={wallet.value + " Ξ"} secondary={wallet.creating ? secondaryLoading : secondary} />
+        {!wallet.creating &&
+            <React.Fragment>
+              <Avatar>{wallet.icon}</Avatar>
+              <StyledListItemText primary={wallet.value + " Ξ"} secondary={wallet.creating ? secondaryLoading : secondary} />
+            </React.Fragment>
+        }
+        {wallet.creating && <CircularProgress color="secondary" />}
       </ListItem>
       <Divider />
     </React.Fragment>

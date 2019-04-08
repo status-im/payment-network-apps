@@ -1,6 +1,7 @@
 import {
   ETHEREUM_LOAD_ERROR,
   ETHEREUM_LOADED,
+  NETWORK_ID_LOADED,
   LOADING_OWNER,
   OWNER_LOADED,
   LOADING_WALLETS,
@@ -25,26 +26,6 @@ const newWalletInitialState = {
 }
 
 const initialState = {
-  // wallets: [
-  //   {
-  //     address: "0x01",
-  //     keycard: "0x8374829382716253627182920948372612637499",
-  //     name: "💳",
-  //     value: 12.4
-  //   },
-  //   {
-  //     address: "0x02",
-  //     keycard: "0x8374829382716253627182920948372612637499",
-  //     name: "👛",
-  //     value: 320.88
-  //   },
-  //   {
-  //     address: "0x03",
-  //     keycard: "0x8374829382716253627182920948372612637499",
-  //     name: "💸",
-  //     value: 0.001
-  //   },
-  // ]
   loadingWeb3: true,
   loadingWeb3Error: null,
   loadingOwner: false,
@@ -52,6 +33,7 @@ const initialState = {
   loadingWallets: false,
   countingWallets: false,
   walletsCount: 0,
+  loadedWalletsCount: 0,
   wallets: [],
   newWallet: newWalletInitialState,
 };
@@ -74,6 +56,10 @@ export default function(state, action) {
       return Object.assign({}, state, {
         loadingWeb3: false,
       });
+    case NETWORK_ID_LOADED:
+      return Object.assign({}, state, {
+        networkID: action.id,
+      });
     case LOADING_OWNER:
       return Object.assign({}, state, {
         loadingOwner: true,
@@ -86,6 +72,8 @@ export default function(state, action) {
     case LOADING_WALLETS:
       return Object.assign({}, state, {
         loadingWallets: true,
+        walletsCount: 0,
+        loadedWalletsCount: 0,
       });
     case WALLETS_LOADED:
       return Object.assign({}, state, {
@@ -116,7 +104,8 @@ export default function(state, action) {
           ...state.wallets.slice(0, action.index),
           wallet,
           ...state.wallets.slice(action.index + 1)
-        ]
+        ],
+        loadedWalletsCount: state.loadedWalletsCount + 1
       });
     case NEW_WALLET:
       return Object.assign({}, state, {
