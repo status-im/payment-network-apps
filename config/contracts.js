@@ -49,13 +49,10 @@ module.exports = {
     //            when not specified
     // - explicit will only attempt to deploy the contracts that are explicitly specified inside the
     //            contracts section.
-    //strategy: 'implicit',
+    strategy: 'explicit',
 
     contracts: {
-      // example:
-      //SimpleStorage: {
-      //  args: [ 100 ]
-      //}
+      TapWalletFactory: {}
     }
   },
 

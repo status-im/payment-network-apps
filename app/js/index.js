@@ -1,10 +1,32 @@
 import EmbarkJS from 'Embark/EmbarkJS';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import thunkMiddleware from 'redux-thunk';
+import { Provider } from 'react-redux'
+import { createStore, applyMiddleware } from 'redux'
+import { enableEthereum } from './actions';
+import rootReducer from './reducers'
 
-// import your contracts
-// e.g if you have a contract named SimpleStorage:
-//import SimpleStorage from 'Embark/contracts/SimpleStorage';
+import 'typeface-roboto';
 
+import { install } from '@material-ui/styles';
+install();
 
-EmbarkJS.onReady((err) => {
-  // You can execute contract calls after the connection
+import App from './components/App';
+
+const store = createStore(rootReducer,
+  applyMiddleware(
+    thunkMiddleware
+  )
+);
+
+store.dispatch(enableEthereum());
+
+EmbarkJS.onReady(() => {
+  ReactDOM.render(
+    <Provider store={store}>
+      <App />
+    </Provider>,
+    document.getElementById("root")
+  );
 });

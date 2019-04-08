@@ -11,5 +11,16 @@
   "devDependencies": {
     "embarkjs-connector-web3": "^4.0.0"
   },
-  "gitHead": "d0d89fc5ae4663c27e4b6b5c9cfcf1b47e645d6e"
+  "gitHead": "d0d89fc5ae4663c27e4b6b5c9cfcf1b47e645d6e",
+  "dependencies": {
+    "@material-ui/core": "^3.9.3",
+    "@material-ui/icons": "^3.0.2",
+    "@material-ui/styles": "^3.0.0-alpha.10",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6",
+    "react-redux": "^6.0.1",
+    "redux": "^4.0.1",
+    "redux-thunk": "^2.3.0",
+    "typeface-roboto": "^0.0.54"
+  }
 }
