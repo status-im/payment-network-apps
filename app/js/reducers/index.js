@@ -115,7 +115,7 @@ export default function(state, action) {
         wallets: [
           ...state.wallets.slice(0, action.index),
           wallet,
-          ...state.wallets.slice(action.index)
+          ...state.wallets.slice(action.index + 1)
         ]
       });
     case NEW_WALLET:
@@ -140,11 +140,25 @@ export default function(state, action) {
         }
       });
     case CREATING_WALLET:
+      const tmpWallet = {
+        creating: true,
+        address: "",
+        keycard: "",
+        name: "",
+        value: 0,
+        icon: action.icon
+      }
+
       return Object.assign({}, state, {
         newWallet: {
           ...state.newWallet,
           creating: true
-        }
+        },
+        wallets: [
+          ...state.wallets.slice(0, action.index),
+          tmpWallet,
+          ...state.wallets.slice(action.index + 1)
+        ]
       });
     case WALLET_CREATED:
       return Object.assign({}, state, {

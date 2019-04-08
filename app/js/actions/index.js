@@ -156,8 +156,10 @@ export const newWalletCancel = (icon) => {
 }
 
 export const CREATING_WALLET = "CREATING_WALLET";
-export const creatingWallet = () => ({
-  type: CREATING_WALLET
+export const creatingWallet = (index, icon) => ({
+  type: CREATING_WALLET,
+  index,
+  icon
 });
 
 export const WALLET_CREATED = "WALLET_CREATED";
@@ -173,23 +175,26 @@ export const walletCreationError = (error) => ({
 
 export const createWallet = () => {
   return async (dispatch, getState) => {
-    dispatch(creatingWallet())
-
     const state = getState();
     const icon = state.newWallet.icon;
     const codePoint = icon.codePointAt(0);
     const name = "0x" + codePoint.toString(16);
     const create = TapWalletFactory.methods.create(name);
+    const walletIndex = state.wallets.length;
 
     try {
       const estimatedGas = await create.estimateGas()
-      const receipt = await create.send({
-        from: state.owner,
-        gas: estimatedGas,
-      });
-      console.log(receipt)
-      dispatch(walletCreated(receipt))
-      dispatch(loadWallets(state.owner))
+      create.send({ from: state.owner, gas: estimatedGas,})
+        .then((receipt) => {
+          console.log(receipt)
+          dispatch(walletCreated(receipt))
+          dispatch(loadWallets(state.owner))
+        })
+        .catch((err) => {
+          console.error(err)
+          dispatch(walletCreationError(err))
+        });
+      dispatch(creatingWallet(walletIndex, icon))
     } catch(err) {
       console.error(err)
       dispatch(walletCreationError(err))

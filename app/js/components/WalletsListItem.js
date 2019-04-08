@@ -29,11 +29,13 @@ const WalletsListItem = ({ wallet }) => {
     <span style={secondaryLineStyles}>💳 {isEmptyAddress(wallet.keycard) ? "" : compressedAddress(wallet.keycard)}</span>
   </span>;
 
+  const secondaryLoading = "loading..."
+
   return (
     <React.Fragment>
       <ListItem button>
         <Avatar>{wallet.icon}</Avatar>
-        <StyledListItemText primary={wallet.value + " Ξ"} secondary={secondary} />
+        <StyledListItemText primary={wallet.value + " Ξ"} secondary={wallet.creating ? secondaryLoading : secondary} />
       </ListItem>
       <Divider />
     </React.Fragment>
