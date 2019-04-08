@@ -70,29 +70,23 @@ export const walletLoaded = (index, address, name, keycard, value, icon) => ({
 
 export const enableEthereum = () => {
   if (window.ethereum) {
+    window.web3 = new Web3(ethereum);
+    return (dispatch) => {
+      ethereum.enable()
+        .then(() => {
+          dispatch(ethereumLoaded());
+          dispatch(loadOwner());
+        })
+        .catch((err) => dispatch(ethereumLoadError(err)))
+    }
+  } else if (window.web3) {
     return (dispatch) => {
       dispatch(ethereumLoaded());
-      dispatch(loadOwner());
+      window.setTimeout(() => dispatch(loadOwner()), 200);
     }
+  } else {
+    return ethereumLoadError("no ethereum browser");
   }
-
-    // window.web3 = new Web3(ethereum);
-    // return (dispatch) => {
-    //   ethereum.enable()
-    //     .then(() => {
-    //       dispatch(ethereumLoaded());
-    //       dispatch(loadOwner());
-    //     })
-    //     .catch((err) => dispatch(ethereumLoadError(err)))
-    // }
-  // } else if (window.web3) {
-    // return (dispatch) => {
-    //   dispatch(ethereumLoaded());
-    //   window.setTimeout(() => dispatch(loadOwner()), 200);
-    // }
-  // } else {
-    // dispatch(ethereumLoadError("no ethereum browser"));
-  // }
 };
 
 export const loadOwner = () => {
@@ -197,6 +191,7 @@ export const createWallet = () => {
       dispatch(walletCreated(receipt))
       dispatch(loadWallets(state.owner))
     } catch(err) {
+      console.error(err)
       dispatch(walletCreationError(err))
     }
   }
