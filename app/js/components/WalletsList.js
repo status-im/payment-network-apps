@@ -2,12 +2,14 @@ import React from 'react';
 
 import { newWallet } from '../actions';
 
-import WalletsListItem from './WalletsListItem';
+import WalletsListItem from '../containers/WalletsListItem';
+
 import TopPanel from './TopPanel';
 import List from '@material-ui/core/List';
 import Fab from '@material-ui/core/Fab';
 import AddIcon from '@material-ui/icons/Add';
 import Typography from '@material-ui/core/Typography';
+import Button from '@material-ui/core/Button';
 
 const styles = {
   addButton: {
@@ -38,7 +40,16 @@ const styles = {
 
 const VALID_NETWORK_NAME = "Ropsten";
 
-const WalletsList = ({ networkID, countingWallets, wrongNetwork, loading, walletsCount, loadedWalletsCount, wallets, onPlusClick }) => {
+const formatBalance = (balance) => {
+  if (balance) {
+    // return web3.utils.fromWei(new web3.utils.BN(ownerBalance))
+    return web3.utils.fromWei(balance);
+  }
+
+  return "-";
+}
+
+const WalletsList = ({ networkID, countingWallets, wrongNetwork, loading, walletsCount, loadedWalletsCount, wallets, onPlusClick, owner, ownerBalance }) => {
   return (<React.Fragment>
     <TopPanel wallets={wallets} />
 
@@ -61,6 +72,17 @@ const WalletsList = ({ networkID, countingWallets, wrongNetwork, loading, wallet
     {!wrongNetwork && !countingWallets && walletsCount == 0 && <div style={styles.empty}>
       <Typography variant="caption" color="inherit">
         You don't have wallets yet. Create a new one!
+        <br />
+        <br />
+        <br />
+
+        Your balance is: {formatBalance(ownerBalance)}.
+        <br />
+        After request some test ETH wait some seconds and check your wallet.
+        <br />
+      <Button variant="contained" target="_blank" href={`https://faucet-ropsten.status.im/donate/${owner}`}>
+        REQUEST TEST ETH
+      </Button>
       </Typography>
     </div>}
 
@@ -81,43 +103,3 @@ const WalletsList = ({ networkID, countingWallets, wrongNetwork, loading, wallet
 };
 
 export default WalletsList;
-
-// export default class WalletsList extends React.Component {
-//   constructor(props) {
-//     super(props);
-//     this.addButtonHandler = this.addButtonHandler.bind(this);
-//   }
-
-//   async addButtonHandler(event) {
-//     event.preventDefault();
-//     const names = ["💳", "👛", "💸"]
-//     const index = Math.floor(Math.random() * Math.floor(names.length));
-//     const codePoint = names[index].codePointAt(0);
-//     const name = "0x" + codePoint.toString(16);
-//     console.log(name)
-//     const create = KeycardTapWalletFactory.methods.create(name);
-//     const estimatedGas = await create.estimateGas();
-//     const receipt = await create.send({
-//       from: this.props.owner,
-//       gas: estimatedGas,
-//     });
-//     console.log(receipt)
-//   }
-
-//   render() {
-//     return (
-//       <React.Fragment>
-//         <TopPanel wallets={this.props.wallets}/>
-//         <List>
-//           {this.props.wallets.map((wallet) => (
-//             <WalletsListItem key={wallet.address} wallet={wallet} />
-//           ))}
-//         </List>
-
-//         <Fab color="secondary" aria-label="Add" style={styles.addButton} onClick={this.addButtonHandler}>
-//           <AddIcon />
-//         </Fab>
-//       </React.Fragment>
-//     );
-//   }
-// }

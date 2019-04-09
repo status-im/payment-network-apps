@@ -1,10 +1,14 @@
 import React from 'react';
+
 import Button from '@material-ui/core/Button';
+import Typography from '@material-ui/core/Typography';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
+import Slide from '@material-ui/core/Slide';
+import TextField from '@material-ui/core/TextField';
 
 const icons = ["💳", "👛", "💸", "😺"]
 
@@ -24,18 +28,32 @@ const errorStyles = {
   color: "red",
 }
 
+function Transition(props) {
+  return <Slide direction="up" {...props} />;
+}
+
 const NewWalletDialog = ({open, creating, selected, onIconClick, onCancelClick, onCreateClick, error}) => (
   <Dialog
+    fullScreen
+    TransitionComponent={Transition}
     open={open}
     aria-labelledby="alert-dialog-title"
     aria-describedby="alert-dialog-description"
   >
     <DialogTitle id="alert-dialog-title">Choose an icon to identify your new Wallet</DialogTitle>
     <DialogContent>
-      {icons.map((icon) =>
-        <a key={icon} onClick={() => onIconClick(icon) }
-          style={selected == icon ? selectedIconStyles : iconStyles}>{icon}</a>
-      )}
+      <div>
+        {icons.map((icon) =>
+          <a key={icon} onClick={() => onIconClick(icon) }
+            style={selected == icon ? selectedIconStyles : iconStyles}>{icon}</a>
+        )}
+      </div>
+      <TextField
+        margin="dense"
+        label="Keycard address"
+        type="text"
+        fullWidth
+      />
     </DialogContent>
     <DialogActions>
       {!creating &&

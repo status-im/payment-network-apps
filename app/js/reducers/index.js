@@ -1,9 +1,11 @@
 import {
   ETHEREUM_LOAD_ERROR,
+  WEB3_ERROR,
   ETHEREUM_LOADED,
   NETWORK_ID_LOADED,
   LOADING_OWNER,
   OWNER_LOADED,
+  OWNER_BALANCE_LOADED,
   LOADING_WALLETS,
   WALLETS_LOADED,
   COUNTING_WALLETS,
@@ -18,7 +20,7 @@ import {
   WALLET_CREATION_ERROR,
 } from "../actions";
 
-const newWalletInitialState = {
+const newWalletFormInitialState = {
   open: false,
   icon: null,
   creating: false,
@@ -30,12 +32,13 @@ const initialState = {
   loadingWeb3Error: null,
   loadingOwner: false,
   owner: null,
+  ownerBalance: null,
   loadingWallets: false,
   countingWallets: false,
   walletsCount: 0,
   loadedWalletsCount: 0,
   wallets: [],
-  newWallet: newWalletInitialState,
+  newWalletForm: newWalletFormInitialState,
 };
 
 export default function(state, action) {
@@ -48,10 +51,15 @@ export default function(state, action) {
 
   switch (action.type) {
     case ETHEREUM_LOAD_ERROR:
+      alert(action.error)
       return Object.assign({}, state, {
         loadingWeb3: false,
         loadingWeb3Error: action.err
       });
+    case WEB3_ERROR:
+      console.error(action.error)
+      alert(action.error)
+      break;
     case ETHEREUM_LOADED:
       return Object.assign({}, state, {
         loadingWeb3: false,
@@ -68,6 +76,10 @@ export default function(state, action) {
       return Object.assign({}, state, {
         loadingOwner: false,
         owner: action.owner,
+      });
+    case OWNER_BALANCE_LOADED:
+      return Object.assign({}, state, {
+        ownerBalance: action.balance,
       });
     case LOADING_WALLETS:
       return Object.assign({}, state, {
@@ -109,22 +121,22 @@ export default function(state, action) {
       });
     case NEW_WALLET:
       return Object.assign({}, state, {
-        newWallet: {
-          ...newWalletInitialState,
+        newWalletForm: {
+          ...newWalletFormInitialState,
           open: true
         }
       });
     case NEW_WALLET_SELECT_ICON:
       return Object.assign({}, state, {
-        newWallet: {
-          ...state.newWallet,
+        newWalletForm: {
+          ...state.newWalletForm,
           icon: action.icon
         }
       });
     case NEW_WALLET_CANCEL:
       return Object.assign({}, state, {
-        newWallet: {
-          ...state.newWallet,
+        newWalletForm: {
+          ...state.newWalletForm,
           open: false
         }
       });
@@ -139,8 +151,8 @@ export default function(state, action) {
       }
 
       return Object.assign({}, state, {
-        newWallet: {
-          ...state.newWallet,
+        newWalletForm: {
+          ...state.newWalletForm,
           creating: true
         },
         wallets: [
@@ -151,12 +163,12 @@ export default function(state, action) {
       });
     case WALLET_CREATED:
       return Object.assign({}, state, {
-        newWallet: newWalletInitialState
+        newWalletForm: newWalletFormInitialState
       });
     case WALLET_CREATION_ERROR:
       return Object.assign({}, state, {
-        newWallet: {
-          ...newWalletInitialState,
+        newWalletForm: {
+          ...newWalletFormInitialState,
           open: true,
           error: action.error
         }

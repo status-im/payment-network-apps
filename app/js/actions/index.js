@@ -29,6 +29,12 @@ export const ownerLoaded = (owner) => ({
   owner
 });
 
+export const WEB3_ERROR = 'WEB3_ERROR';
+export const web3Error = (error) => ({
+  type: WEB3_ERROR,
+  error
+});
+
 export const LOADING_WALLETS = 'LOADING_WALLETS';
 export const loadingWallets = () => ({
   type: LOADING_WALLETS
@@ -78,7 +84,9 @@ export const loadNetworkID = () => {
   return (dispatch) => {
     web3.eth.net.getId()
       .then((id) => dispatch(networkIDLoaded(id)))
-      .catch((id) => console.error(id))
+      .catch((err) => {
+        dispatch(web3Error(err))
+      })
   }
 }
 
@@ -88,11 +96,15 @@ export const enableEthereum = () => {
     return (dispatch) => {
       ethereum.enable()
         .then(() => {
-          dispatch(ethereumLoaded());
-          dispatch(loadNetworkID());
-          dispatch(loadOwner());
+          window.setTimeout(() => {
+            dispatch(ethereumLoaded());
+            dispatch(loadNetworkID());
+            dispatch(loadOwner());
+          }, 200)
         })
-        .catch((err) => dispatch(ethereumLoadError(err)))
+        .catch((err) => {
+          dispatch(ethereumLoadError(err));
+        })
     }
   } else if (window.web3) {
     return (dispatch) => {
@@ -115,10 +127,27 @@ export const loadOwner = () => {
         const owner = accounts[0];
         dispatch(ownerLoaded(owner))
         dispatch(loadWallets(owner))
+        dispatch(loadOwnerBalance(owner))
       })
-      .catch((err) => console.error(err));
+      .catch((err) => {
+        dispatch(web3Error(err))
+      });
   }
 };
+
+export const OWNER_BALANCE_LOADED = "OWNER_BALANCE_LOADED";
+export const ownerBalanceLoaded = (balance) => ({
+  type: OWNER_BALANCE_LOADED,
+  balance
+});
+
+export const loadOwnerBalance = (owner) => {
+  return (dispatch) => {
+    web3.eth.getBalance(owner)
+      .then((balance) => dispatch(ownerBalanceLoaded(balance)))
+      .catch((err) => dispatch(ethereumLoadError(err)))
+  }
+}
 
 export const loadWallets = (owner) => {
   return (dispatch) => {
@@ -131,7 +160,16 @@ export const loadWallets = (owner) => {
           dispatch(loadWallet(owner, i))
         };
       })
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        const params = new URLSearchParams(document.location.search);
+        const web3Retry = "r";
+        if (!params.get(web3Retry)) {
+          params.set(web3Retry, "1");
+          document.location.search = params.toString();
+        } else {
+          dispatch(web3Error(err));
+        }
+      })
   }
 };
 
@@ -196,7 +234,7 @@ export const walletCreationError = (error) => ({
 export const createWallet = () => {
   return async (dispatch, getState) => {
     const state = getState();
-    const icon = state.newWallet.icon;
+    const icon = state.newWalletForm.icon;
     const codePoint = icon.codePointAt(0);
     const name = "0x" + codePoint.toString(16);
     const create = TapWalletFactory.methods.create(name);
@@ -211,12 +249,12 @@ export const createWallet = () => {
           dispatch(loadWallets(state.owner))
         })
         .catch((err) => {
-          console.error(err)
+          dispatch(web3Error(err))
           dispatch(walletCreationError(err))
         });
       dispatch(creatingWallet(walletIndex, icon))
     } catch(err) {
-      console.error(err)
+      dispatch(web3Error(err))
       dispatch(walletCreationError(err))
     }
   }

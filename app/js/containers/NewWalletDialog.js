@@ -7,10 +7,10 @@ import {
 } from '../actions';
 
 const mapStateToProps = state => ({
-  open: state.newWallet.open,
-  selected: state.newWallet.icon,
-  creating: state.newWallet.creating,
-  error: (state.newWallet.error || "").toString(),
+  open: state.newWalletForm.open,
+  selected: state.newWalletForm.icon,
+  creating: state.newWalletForm.creating,
+  error: (state.newWalletForm.error || "").toString(),
 });
 
 const mapDispatchToProps = dispatch => ({

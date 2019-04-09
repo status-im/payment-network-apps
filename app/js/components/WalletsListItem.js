@@ -25,7 +25,7 @@ const secondaryLineStyles = {
   display: "block"
 };
 
-const WalletsListItem = ({ wallet }) => {
+const WalletsListItem = ({ wallet, onItemClick }) => {
   const secondary = <span>
     <span style={secondaryLineStyles}>🔖 {compressedAddress(wallet.address)}</span>
     <span style={secondaryLineStyles}>💳 {isEmptyAddress(wallet.keycard) ? "" : compressedAddress(wallet.keycard)}</span>
@@ -35,7 +35,7 @@ const WalletsListItem = ({ wallet }) => {
 
   return (
     <React.Fragment>
-      <ListItem button>
+      <ListItem button onClick={() => onItemClick()}>
         {!wallet.creating &&
             <React.Fragment>
               <Avatar>{wallet.icon}</Avatar>

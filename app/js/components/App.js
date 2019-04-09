@@ -40,6 +40,8 @@ const App = (props) => {
     body = <WalletsList />
   }
 
+  const networkText = props.networkID ? `(Net ID: ${props.networkID})` : "";
+
   return (
     <div className={props.classes.container}>
       <CssBaseline />
@@ -48,7 +50,7 @@ const App = (props) => {
           <Typography variant="h6" color="inherit">
             Keycard Wallet
             <Typography variant="caption" color="inherit">
-              {compressedAddress(TapWalletFactory.address)} (Net ID: {props.networkID || "-"})
+              {compressedAddress(TapWalletFactory.address)} {networkText}
             </Typography>
           </Typography>
         </Toolbar>
