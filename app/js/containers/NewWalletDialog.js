@@ -14,7 +14,7 @@ const mapStateToProps = state => ({
   selected: state.newWalletForm.icon,
   creating: state.newWalletForm.creating,
   error: (state.newWalletForm.error || "").toString(),
-  keycard: state.newWalletForm.keycardAddress || "",
+  keycardAddress: state.newWalletForm.keycardAddress || "",
   maxTxValue: state.newWalletForm.maxTxValue,
 });
 

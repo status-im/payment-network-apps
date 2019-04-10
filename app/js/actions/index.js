@@ -65,13 +65,13 @@ export const loadingWallet = (index) => ({
 });
 
 export const WALLET_LOADED = 'WALLET_LOADED';
-export const walletLoaded = (index, address, nonce, name, keycard, balance, icon, maxTxValue) => ({
+export const walletLoaded = (index, address, nonce, name, keycardAddress, balance, icon, maxTxValue) => ({
   type: WALLET_LOADED,
   index,
   address,
   nonce,
   name,
-  keycard,
+  keycardAddress,
   balance,
   icon,
   maxTxValue,
@@ -200,7 +200,7 @@ export const loadWallet = (owner, index) => {
 
     const name = await walletContract.methods.name().call();
     const balance = await web3.eth.getBalance(address);
-    const keycard = await walletContract.methods.keycard().call();
+    const keycardAddress = await walletContract.methods.keycard().call();
     const nonce = await walletContract.methods.nonce().call();
     const maxTxValue = await walletContract.methods.settings().call();
 
@@ -209,7 +209,7 @@ export const loadWallet = (owner, index) => {
       icon = String.fromCodePoint(name);
     } catch(e){}
 
-    dispatch(walletLoaded(index, address, nonce, name, keycard, balance, icon, maxTxValue))
+    dispatch(walletLoaded(index, address, nonce, name, keycardAddress, balance, icon, maxTxValue))
   };
 }
 

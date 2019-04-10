@@ -125,7 +125,7 @@ export default function(state, action) {
       const wallet = {
         address: action.address,
         nonce: action.nonce,
-        keycard: action.keycard,
+        keycardAddress: action.keycardAddress,
         name: action.name,
         balance: action.balance,
         icon: action.icon,
@@ -180,7 +180,7 @@ export default function(state, action) {
       const tmpWallet = {
         creating: true,
         address: "",
-        keycard: "",
+        keycardAddress: "",
         name: "",
         balance: 0,
         icon: action.icon

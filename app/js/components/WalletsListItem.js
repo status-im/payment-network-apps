@@ -50,7 +50,7 @@ const styles = {
 const WalletsListItem = ({ wallet, onItemClick }) => {
   const secondary = <span>
     <span style={styles.secondaryLine}>🔖 {compressedAddress(wallet.address, 8)}</span>
-    <span style={styles.secondaryLine}>💳 {isEmptyAddress(wallet.keycard) ? "" : compressedAddress(wallet.keycard, 8)}</span>
+    <span style={styles.secondaryLine}>💳 {isEmptyAddress(wallet.keycardAddress) ? "" : compressedAddress(wallet.keycardAddress, 8)}</span>
   </span>;
 
   const secondaryLoading = "loading..."

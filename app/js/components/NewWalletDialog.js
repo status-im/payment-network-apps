@@ -35,7 +35,7 @@ function Transition(props) {
   return <Slide direction="up" {...props} />;
 }
 
-const NewWalletDialog = ({open, creating, selected, keycard, onIconClick, onCancelClick, onCreateClick, onKeycardChange, error, onTapButtonClick, onMaxTxValueChange, maxTxValue}) => (
+const NewWalletDialog = ({open, creating, selected, keycardAddress, onIconClick, onCancelClick, onCreateClick, onKeycardChange, error, onTapButtonClick, onMaxTxValueChange, maxTxValue}) => (
   <Dialog
     fullScreen
     TransitionComponent={Transition}
@@ -72,7 +72,7 @@ const NewWalletDialog = ({open, creating, selected, keycard, onIconClick, onCanc
         margin="dense"
         label="Keycard address"
         type="text"
-        value={keycard}
+        value={keycardAddress}
         style={{marginBottom: 16}}
         fullWidth
         onChange={(event) => onKeycardChange(event.currentTarget.value)}
