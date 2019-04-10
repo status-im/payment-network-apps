@@ -40,6 +40,7 @@ module.exports = {
     // If false, the following code must run before sending any transaction: `await EmbarkJS.enableEthereum();`
     // Default value is true.
     // dappAutoEnable: true,
+    dappAutoEnable: false,
 
     gas: "auto",
 
