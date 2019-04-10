@@ -1,6 +1,7 @@
 import EmbarkJS from 'Embark/EmbarkJS';
 import TapWalletFactory from 'Embark/contracts/TapWalletFactory';
 import TapWallet from 'Embark/contracts/TapWallet';
+import { emptyAddress } from '../utils';
 
 export const NEW_WALLET = 'NEW_WALLET';
 export const newWallet = () => ({
@@ -64,14 +65,16 @@ export const loadingWallet = (index) => ({
 });
 
 export const WALLET_LOADED = 'WALLET_LOADED';
-export const walletLoaded = (index, address, name, keycard, value, icon) => ({
+export const walletLoaded = (index, address, nonce, name, keycard, balance, icon, maxTxValue) => ({
   type: WALLET_LOADED,
   index,
   address,
+  nonce,
   name,
   keycard,
-  value,
-  icon
+  balance,
+  icon,
+  maxTxValue,
 });
 
 export const NETWORK_ID_LOADED = "NETWORK_ID_LOADED";
@@ -93,6 +96,15 @@ export const loadNetworkID = () => {
 export const enableEthereum = () => {
   if (window.ethereum) {
     window.web3 = new Web3(ethereum);
+    //FIXME: hack
+    try {
+      // alert(statusWeb3)
+      web3.eth.personal.signMessagePinless = statusWeb3.personal.signMessagePinless;
+      // alert(web3.eth.personal.signMessagePinless)
+    } catch(err){
+      alert(err)
+    }
+
     return (dispatch) => {
       ethereum.enable()
         .then(() => {
@@ -125,6 +137,7 @@ export const loadOwner = () => {
     return web3.eth.getAccounts()
       .then((accounts) => {
         const owner = accounts[0];
+        // web3.eth.personal.signMessagePinless("hello", owner)
         dispatch(ownerLoaded(owner))
         dispatch(loadWallets(owner))
         dispatch(loadOwnerBalance(owner))
@@ -186,15 +199,17 @@ export const loadWallet = (owner, index) => {
     walletContract.address = address;
 
     const name = await walletContract.methods.name().call();
-    const value = await web3.eth.getBalance(address);
+    const balance = await web3.eth.getBalance(address);
     const keycard = await walletContract.methods.keycard().call();
+    const nonce = await walletContract.methods.nonce().call();
+    const maxTxValue = await walletContract.methods.settings().call();
 
     let icon = "";
     try {
       icon = String.fromCodePoint(name);
     } catch(e){}
 
-    dispatch(walletLoaded(index, address, name, keycard, value, icon))
+    dispatch(walletLoaded(index, address, nonce, name, keycard, balance, icon, maxTxValue))
   };
 }
 
@@ -207,7 +222,7 @@ export const newWalletSelectIcon = (icon) => {
 }
 
 export const NEW_WALLET_CANCEL = "NEW_WALLET_CANCEL";
-export const newWalletCancel = (icon) => {
+export const newWalletCancel = () => {
   return {
     type: NEW_WALLET_CANCEL
   }
@@ -231,21 +246,36 @@ export const walletCreationError = (error) => ({
   error
 });
 
+export const NEW_WALLET_FORM_KEYCARD_ADDRESS_CHANGED = "NEW_WALLET_FORM_KEYCARD_ADDRESS_CHANGED";
+export const newWalletFormKeycardAddressChanged = (address) => ({
+  type: NEW_WALLET_FORM_KEYCARD_ADDRESS_CHANGED,
+  address
+});
+
+export const NEW_WALLET_FORM_MAX_TX_VALUE_CHANGED = "NEW_WALLET_FORM_MAX_TX_VALUE_CHANGED";
+export const newWalletFormMaxTxValueChanged = (value) => ({
+  type: NEW_WALLET_FORM_MAX_TX_VALUE_CHANGED,
+  value
+});
+
 export const createWallet = () => {
   return async (dispatch, getState) => {
     const state = getState();
     const icon = state.newWalletForm.icon;
+    const maxTxValue = web3.utils.toWei(state.newWalletForm.maxTxValue);
+    const keycardAddress = state.newWalletForm.keycardAddress || emptyAddress;
     const codePoint = icon.codePointAt(0);
     const name = "0x" + codePoint.toString(16);
-    const create = TapWalletFactory.methods.create(name);
+    const create = TapWalletFactory.methods.create(name, keycardAddress, maxTxValue);
     const walletIndex = state.wallets.length;
 
     try {
       const estimatedGas = await create.estimateGas()
-      create.send({ from: state.owner, gas: estimatedGas,})
+      create.send({ from: state.owner, gas: estimatedGas })
         .then((receipt) => {
           console.log(receipt)
           dispatch(walletCreated(receipt))
+          dispatch(newWalletCancel())
           dispatch(loadWallets(state.owner))
         })
         .catch((err) => {
@@ -258,4 +288,86 @@ export const createWallet = () => {
       dispatch(walletCreationError(err))
     }
   }
+}
+
+export const SELECT_WALLET = 'SELECT_WALLET';
+export const selectWallet = (index) => ({
+  type: SELECT_WALLET,
+  index
+});
+
+export const CLOSE_SELECTED_WALLET = 'CLOSE_SELECTED_WALLET';
+export const closeSelectedWallet = (index) => ({
+  type: CLOSE_SELECTED_WALLET,
+});
+
+export const TOPPING_UP_WALLET = 'TOPPING_UP_WALLET';
+export const toppingUpWallet = (index) => ({
+  type: TOPPING_UP_WALLET,
+  index
+});
+
+export const ERROR_TOPPING_UP_WALLET = 'ERROR_TOPPING_UP_WALLET';
+export const errorToppingUpWallet = (index) => ({
+  type: ERROR_TOPPING_UP_WALLET,
+  index
+});
+
+export const WALLET_TOPPED_UP = 'WALLET_TOPPED_UP';
+export const walletToppedUp = (index) => ({
+  type: WALLET_TOPPED_UP,
+  index
+});
+
+export const topUpWallet = (index, address, value) => {
+  return async (dispatch, getState) => {
+    const owner = getState().owner;
+    const tx = {
+      from: owner,
+      to: address,
+      value: web3.utils.toWei("0.001"),
+    }
+
+    const gas = await web3.eth.estimateGas(tx);
+    tx.gas = gas;
+
+    dispatch(toppingUpWallet(index));
+    web3.eth.sendTransaction(tx)
+      .then(() => {
+        dispatch(loadWallet(owner, index))
+        dispatch(walletToppedUp(index))
+      })
+      .catch((err) => {
+        dispatch(errorToppingUpWallet(index))
+      })
+  }
+};
+
+export const KEYCARD_DISCOVERED = "KEYCARD_DISCOVERED";
+export const keycardDiscovered = (sig) => {
+  //FIXME: put a random message
+  const address = web3.eth.accounts.recover("0x112233", sig)
+  return {
+    type: KEYCARD_DISCOVERED,
+    address,
+  }
+}
+
+export const signMessagePinless = (message) => {
+  return (dispatch, getState) => {
+    const owner = getState().owner;
+    // web3 0.2 style using status injected web3
+    try {
+      //FIXME: put a random message
+      web3.eth.personal.signMessagePinless("112233", "0x0000000000000000000000000000000000000000", "", function(err, sig) {
+        if (err) {
+          dispatch(web3Error(err))
+        } else {
+          dispatch(keycardDiscovered(sig));
+        }
+      })
+    } catch(err) {
+      dispatch(web3Error(err))
+    }
+  };
 }

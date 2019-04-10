@@ -28,7 +28,7 @@ contract('TapWalletFactory', () => {
     const ownerWalletsCountBefore = await TapWalletFactory.methods.ownerWalletsCount(owner).call();
     assert.equal(ownerWalletsCountBefore, 0);
 
-    const create = TapWalletFactory.methods.create("0x010203");
+    const create = TapWalletFactory.methods.create("0x010203", zeroAddress, 0);
     const receipt = await create.send({
       from: owner
     });

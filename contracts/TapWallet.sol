@@ -23,9 +23,11 @@ contract TapWallet {
   // anyone can add funds to the wallet
   function () external payable {}
 
-  constructor(bytes3 _name) public {
+  constructor(bytes3 _name, address _keycard, uint256 _maxTxValue) public {
     owner = msg.sender;
     name = _name;
+    keycard = _keycard;
+    settings.maxTxValue = _maxTxValue;
     nonce = 0;
   }
 

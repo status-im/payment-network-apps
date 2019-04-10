@@ -4,7 +4,7 @@ import { newWallet } from '../actions';
 
 import WalletsListItem from '../containers/WalletsListItem';
 
-import TopPanel from './TopPanel';
+import TopPanel from '../containers/TopPanel';
 import List from '@material-ui/core/List';
 import Fab from '@material-ui/core/Fab';
 import AddIcon from '@material-ui/icons/Add';

@@ -16,26 +16,17 @@ const styles = {
   }
 };
 
-const TopPanel = ({ wallets }) => {
-  const totalWei = wallets.filter((wallet) => wallet).reduce((acc, w) => {
-    return acc.add(new web3.utils.BN(w.value))
-  }, new web3.utils.BN(0));
-
-  let unit  = "wei",
-    label = "wei",
-    total = totalWei;
-
-  const totalEth = web3.utils.fromWei(total);
-
-  return (
-    <div style={styles.container}>
-      <div>
-        <Typography variant="h2" color="inherit">
-          {totalEth} Ξ
-        </Typography>
-      </div>
+const TopPanel = ({ total, fullTotal }) => (
+  <div style={styles.container}>
+    <div>
+      <Typography variant="h2" color="inherit">
+        {total} Ξ
+      </Typography>
+      <Typography variant="body1" color="inherit" style={{textAlign: "center"}}>
+        {fullTotal}
+      </Typography>
     </div>
-  );
-}
+  </div>
+);
 
 export default TopPanel;

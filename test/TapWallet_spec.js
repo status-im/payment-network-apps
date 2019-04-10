@@ -6,7 +6,7 @@ let owner,
 config({
   contracts: {
     TapWallet: {
-      args: ["0x000000"]
+      args: ["0x000000", "0x0000000000000000000000000000000000000000", 0]
     }
   }
 }, (err, _accounts) => {

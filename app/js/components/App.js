@@ -4,6 +4,7 @@ import EmbarkJS from 'Embark/EmbarkJS';
 
 import WalletsList from '../containers/WalletsList';
 import NewWalletDialog from '../containers/NewWalletDialog';
+import SelectedWalletDialog from '../containers/SelectedWalletDialog';
 import TapWalletFactory from 'Embark/contracts/TapWalletFactory';
 
 import { withStyles } from '@material-ui/core/styles';
@@ -58,6 +59,7 @@ const App = (props) => {
 
       <div>
         <NewWalletDialog />
+        <SelectedWalletDialog />
         {body}
       </div>
 

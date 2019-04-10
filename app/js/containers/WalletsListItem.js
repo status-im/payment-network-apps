@@ -1,14 +1,14 @@
 import { connect } from 'react-redux';
 import WalletsListItem from '../components/WalletsListItem';
-import { newWallet } from '../actions';
-
-const VALID_NETWORK_ID = 3;
+import { selectWallet } from '../actions';
 
 const mapStateToProps = state => ({
+  //FIXME: hack
+  wallets: state.wallets,
 });
 
 const mapDispatchToProps = dispatch => ({
-  onItemClick: () => dispatch(newWallet())
+  onItemClick: (index) => dispatch(selectWallet(index))
 });
 
 export default connect(

@@ -1,7 +1,10 @@
-export const compressedAddress = (a) =>
-  `${a.slice(0, 6)}...${a.slice(a.length - 4)}`
+export const emptyAddress = "0x0000000000000000000000000000000000000000"
 
-const emptyAddress = "0x0000000000000000000000000000000000000000"
+export const compressedAddress = (a, padding) => {
+  padding = padding || 4;
+  return `${a.slice(0, padding + 2)}...${a.slice(a.length - padding)}`
+}
+
 export const isEmptyAddress = (a) =>
   a == emptyAddress
 

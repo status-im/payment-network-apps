@@ -10,8 +10,8 @@ contract TapWalletFactory {
     bytes3 name
   );
 
-  function create(bytes3 name) public {
-    TapWallet wallet = new TapWallet(name);
+  function create(bytes3 name, address keycard, uint256 maxTxValue) public {
+    TapWallet wallet = new TapWallet(name, keycard, maxTxValue);
     ownersWallets[msg.sender].push(address(wallet));
     emit NewWallet(wallet, name);
   }

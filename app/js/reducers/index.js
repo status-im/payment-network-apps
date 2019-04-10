@@ -15,16 +15,34 @@ import {
   NEW_WALLET,
   NEW_WALLET_SELECT_ICON,
   NEW_WALLET_CANCEL,
+  NEW_WALLET_FORM_KEYCARD_ADDRESS_CHANGED,
+  NEW_WALLET_FORM_MAX_TX_VALUE_CHANGED,
   CREATING_WALLET,
   WALLET_CREATED,
   WALLET_CREATION_ERROR,
+  SELECT_WALLET,
+  CLOSE_SELECTED_WALLET,
+  TOPPING_UP_WALLET,
+  ERROR_TOPPING_UP_WALLET,
+  WALLET_TOPPED_UP,
+  KEYCARD_DISCOVERED,
 } from "../actions";
 
 const newWalletFormInitialState = {
   open: false,
   icon: null,
   creating: false,
-  error: null
+  error: null,
+  keycardAddress: null,
+  index: null,
+  balance: null,
+  toppingUp: false,
+  maxTxValue: "0.1",
+}
+
+const selectedWalletInitialState = {
+  open: false,
+  index: null,
 }
 
 const initialState = {
@@ -39,11 +57,12 @@ const initialState = {
   loadedWalletsCount: 0,
   wallets: [],
   newWalletForm: newWalletFormInitialState,
+  selectedWallet: selectedWalletInitialState,
 };
 
 export default function(state, action) {
-  console.log("state", state)
   console.log("action", action)
+  console.log("state", state)
 
   if (typeof state === 'undefined') {
     return initialState;
@@ -105,10 +124,13 @@ export default function(state, action) {
     case WALLET_LOADED:
       const wallet = {
         address: action.address,
+        nonce: action.nonce,
         keycard: action.keycard,
         name: action.name,
-        value: action.value,
-        icon: action.icon
+        balance: action.balance,
+        icon: action.icon,
+        index: action.index,
+        maxTxValue: action.maxTxValue,
       }
 
       return Object.assign({}, state, {
@@ -140,13 +162,27 @@ export default function(state, action) {
           open: false
         }
       });
+    case NEW_WALLET_FORM_KEYCARD_ADDRESS_CHANGED:
+      return Object.assign({}, state, {
+        newWalletForm: {
+          ...state.newWalletForm,
+          keycardAddress: action.address
+        }
+      });
+    case NEW_WALLET_FORM_MAX_TX_VALUE_CHANGED:
+      return Object.assign({}, state, {
+        newWalletForm: {
+          ...state.newWalletForm,
+          maxTxValue: action.value
+        }
+      });
     case CREATING_WALLET:
       const tmpWallet = {
         creating: true,
         address: "",
         keycard: "",
         name: "",
-        value: 0,
+        balance: 0,
         icon: action.icon
       }
 
@@ -171,6 +207,48 @@ export default function(state, action) {
           ...newWalletFormInitialState,
           open: true,
           error: action.error
+        }
+      });
+    case SELECT_WALLET:
+      return Object.assign({}, state, {
+        selectedWallet: {
+          ...state.selectedWallet,
+          open: true,
+          index: action.index,
+        }
+      });
+    case CLOSE_SELECTED_WALLET:
+      return Object.assign({}, state, {
+        selectedWallet: selectedWalletInitialState,
+      });
+    case TOPPING_UP_WALLET:
+      const toppingUpWallet = state.wallets[action.index];
+      toppingUpWallet.toppingUp = true;
+
+      return Object.assign({}, state, {
+        wallets: [
+          ...state.wallets.slice(0, action.index),
+          toppingUpWallet,
+          ...state.wallets.slice(action.index + 1)
+        ],
+      });
+    case ERROR_TOPPING_UP_WALLET:
+    case WALLET_TOPPED_UP:
+      const toppedUpWallet = state.wallets[action.index];
+      toppedUpWallet.toppingUp = false;
+
+      return Object.assign({}, state, {
+        wallets: [
+          ...state.wallets.slice(0, action.index),
+          toppedUpWallet,
+          ...state.wallets.slice(action.index + 1)
+        ],
+      });
+    case KEYCARD_DISCOVERED:
+      return Object.assign({}, state, {
+        newWalletForm: {
+          ...state.newWalletForm,
+          keycardAddress: action.address,
         }
       });
   }
