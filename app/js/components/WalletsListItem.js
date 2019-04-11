@@ -29,6 +29,14 @@ const formattedBalance = (balance) => {
   return "";
 }
 
+const formatTime = (d) => {
+  if (!d) {
+    return "";
+  }
+
+  return `${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}`;
+}
+
 const styles = {
   secondaryLine: {
     display: "block"

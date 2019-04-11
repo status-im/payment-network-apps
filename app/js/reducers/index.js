@@ -26,6 +26,7 @@ import {
   ERROR_TOPPING_UP_WALLET,
   WALLET_TOPPED_UP,
   KEYCARD_DISCOVERED,
+  WALLET_WATCHED,
 } from "../actions";
 
 const newWalletFormInitialState = {
@@ -250,6 +251,21 @@ export default function(state, action) {
           ...state.newWalletForm,
           keycardAddress: action.address,
         }
+      });
+    case WALLET_WATCHED:
+      const watchedWallet = state.wallets[action.index];
+      if (!watchedWallet) {
+        return state;
+      }
+
+      watchedWallet.watchedAt = action.date;
+
+      return Object.assign({}, state, {
+        wallets: [
+          ...state.wallets.slice(0, action.index),
+          watchedWallet,
+          ...state.wallets.slice(action.index + 1)
+        ],
       });
   }
 

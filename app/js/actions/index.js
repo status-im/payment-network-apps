@@ -186,6 +186,33 @@ export const loadWallets = (owner) => {
   }
 };
 
+export const WALLET_WATCHED = "WALLET_WATCHED";
+export const walletWatched = (index, date) => ({
+  type: WALLET_WATCHED,
+  index,
+  date,
+});
+
+export const watchWallet = (walletContract, index, nonce) => {
+  return (dispatch) => {
+    window.setTimeout(() => {
+      walletContract.methods.nonce().call()
+        .then((newNonce) => {
+          try {
+            if (newNonce != nonce) {
+              alert("payment requested")
+            }
+            dispatch(walletWatched(index, new Date()))
+            dispatch(watchWallet(walletContract, index, newNonce))
+          } catch(err) {
+            alert(err)
+          }
+        })
+
+    }, 2000)
+  }
+}
+
 export const loadWallet = (owner, index) => {
   return async (dispatch) => {
     dispatch(loadingWallet(index))
@@ -210,6 +237,7 @@ export const loadWallet = (owner, index) => {
     } catch(e){}
 
     dispatch(walletLoaded(index, address, nonce, name, keycardAddress, balance, icon, maxTxValue))
+    dispatch(watchWallet(walletContract, index, nonce))
   };
 }
 

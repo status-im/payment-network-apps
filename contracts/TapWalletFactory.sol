@@ -4,7 +4,7 @@ import './TapWallet.sol';
 
 contract TapWalletFactory {
   mapping(address => address[]) public ownersWallets;
-  mapping(address => address[]) public keycardsWallets;
+  mapping(address => address) public keycardsWallets;
 
   event NewWallet(
     TapWallet wallet,
@@ -14,7 +14,7 @@ contract TapWalletFactory {
   function create(bytes3 name, address keycard, uint256 maxTxValue) public {
     TapWallet wallet = new TapWallet(name, keycard, maxTxValue);
     ownersWallets[msg.sender].push(address(wallet));
-    keycardsWallets[keycard].push(address(wallet));
+    keycardsWallets[keycard] = address(wallet);
     emit NewWallet(wallet, name);
   }
 
