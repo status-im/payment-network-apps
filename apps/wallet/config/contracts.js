@@ -57,7 +57,13 @@ module.exports = {
     // filteredFields: [],
 
     contracts: {
-      KeycardWalletFactory: {}
+      KeycardWalletFactory: {
+        file: "../contracts/KeycardWalletFactory.sol"
+      },
+      KeycardWallet: {
+        deploy: false,
+        file: "../contracts/KeycardWallet.sol"
+      }
     }
   },
 
