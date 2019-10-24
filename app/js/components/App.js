@@ -5,7 +5,7 @@ import EmbarkJS from 'Embark/EmbarkJS';
 import WalletsList from '../containers/WalletsList';
 import NewWalletDialog from '../containers/NewWalletDialog';
 import SelectedWalletDialog from '../containers/SelectedWalletDialog';
-import TapWalletFactory from 'Embark/contracts/TapWalletFactory';
+import KeycardWalletFactory from 'Embark/contracts/KeycardWalletFactory';
 
 import { withStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
@@ -51,7 +51,7 @@ const App = (props) => {
           <Typography variant="h6" color="inherit">
             Keycard Wallet
             <Typography variant="caption" color="inherit">
-              {compressedAddress(TapWalletFactory.address)} {networkText}
+              {compressedAddress(KeycardWalletFactory.address)} {networkText}
             </Typography>
           </Typography>
         </Toolbar>

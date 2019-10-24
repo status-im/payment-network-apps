@@ -1,6 +1,6 @@
 import EmbarkJS from 'Embark/EmbarkJS';
-import TapWalletFactory from 'Embark/contracts/TapWalletFactory';
-import TapWallet from 'Embark/contracts/TapWallet';
+import KeycardWalletFactory from 'Embark/contracts/KeycardWalletFactory';
+import KeycardWallet from 'Embark/contracts/KeycardWallet';
 import { emptyAddress } from '../utils';
 
 export const NEW_WALLET = 'NEW_WALLET';
@@ -137,7 +137,6 @@ export const loadOwner = () => {
     return web3.eth.getAccounts()
       .then((accounts) => {
         const owner = accounts[0];
-        // web3.eth.personal.signMessagePinless("hello", owner)
         dispatch(ownerLoaded(owner))
         dispatch(loadWallets(owner))
         dispatch(loadOwnerBalance(owner))
@@ -166,7 +165,7 @@ export const loadWallets = (owner) => {
   return (dispatch) => {
     dispatch(loadingWallets())
     dispatch(countingWallets())
-    return TapWalletFactory.methods.ownerWalletsCount(owner).call()
+    return KeycardWalletFactory.methods.ownerWalletsCount(owner).call()
       .then((count) => {
         dispatch(walletsCounted(count));
         for (var i = 0; i < count; i++) {
@@ -217,8 +216,8 @@ export const loadWallet = (owner, index) => {
   return async (dispatch) => {
     dispatch(loadingWallet(index))
 
-    const address = await TapWalletFactory.methods.ownersWallets(owner, index).call();
-    const jsonInterface = TapWallet.options.jsonInterface;
+    const address = await KeycardWalletFactory.methods.ownersWallets(owner, index).call();
+    const jsonInterface = KeycardWallet.options.jsonInterface;
     const walletContract = new EmbarkJS.Blockchain.Contract({
       abi: jsonInterface,
       address: address,
@@ -294,7 +293,7 @@ export const createWallet = () => {
     const keycardAddress = state.newWalletForm.keycardAddress || emptyAddress;
     const codePoint = icon.codePointAt(0);
     const name = "0x" + codePoint.toString(16);
-    const create = TapWalletFactory.methods.create(name, keycardAddress, maxTxValue);
+    const create = KeycardWalletFactory.methods.create(name, keycardAddress, maxTxValue);
     const walletIndex = state.wallets.length;
 
     try {

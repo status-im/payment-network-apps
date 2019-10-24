@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-contract TapWallet {
+contract KeycardWallet {
   event NewPaymentRequest(uint256 nonce, address to, uint256 value);
   event NewWithdrawal(address to, uint256 value);
 

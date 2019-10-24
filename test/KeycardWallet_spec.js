@@ -1,11 +1,11 @@
-const TapWallet = require('Embark/contracts/TapWallet');
+const KeycardWallet = require('Embark/contracts/KeycardWallet');
 
 let owner,
   merchant;
 
 config({
   contracts: {
-    TapWallet: {
+    KeycardWallet: {
       args: ["0x000000", "0x0000000000000000000000000000000000000000", 0]
     }
   }
@@ -26,9 +26,9 @@ const getErrorReason = (err) => {
   return errors[0];
 }
 
-contract('TapWallet', () => {
+contract('KeycardWallet', () => {
   const setKeycard = async () => {
-    const setKeycard = TapWallet.methods.setKeycard(keycard);
+    const setKeycard = KeycardWallet.methods.setKeycard(keycard);
     await setKeycard.send({
       from: owner
     });
@@ -39,12 +39,12 @@ contract('TapWallet', () => {
     const sig = await web3.eth.sign(message, owner);
     const prefixedHash = await web3.eth.accounts.hashMessage(message);
 
-    const contractResult = await TapWallet.methods.recover(prefixedHash, sig).call();
+    const contractResult = await KeycardWallet.methods.recover(prefixedHash, sig).call();
     assert.equal(contractResult, owner, "contractResult == owner");
   });
 
   it('add balance', async () => {
-    const contractBalanceBefore = await web3.eth.getBalance(TapWallet.address);
+    const contractBalanceBefore = await web3.eth.getBalance(KeycardWallet.address);
     assert.equal(contractBalanceBefore, 0);
 
     const value = 100;
@@ -52,19 +52,19 @@ contract('TapWallet', () => {
 
     const tx = {
       from: owner,
-      to: TapWallet.address,
+      to: KeycardWallet.address,
       nonce: nonce,
       value: value,
     };
 
     const res = await web3.eth.sendTransaction(tx);
-    const contractBalanceAfter = await web3.eth.getBalance(TapWallet.address);
+    const contractBalanceAfter = await web3.eth.getBalance(KeycardWallet.address);
     assert.equal(contractBalanceAfter, value);
   });
 
   it('requestPayment without setting a keycard address', async () => {
     const message = await web3.utils.soliditySha3(0, "0x00", 0);
-    const requestPayment = TapWallet.methods.requestPayment("0x00", "0x00", 0, merchant, 0);
+    const requestPayment = KeycardWallet.methods.requestPayment("0x00", "0x00", 0, merchant, 0);
     try {
       const estimatedGas = await requestPayment.estimateGas();
       await requestPayment.send({
@@ -78,7 +78,7 @@ contract('TapWallet', () => {
   });
 
   it('setKeycard needs to be called by the owner', async () => {
-    const setKeycard = TapWallet.methods.setKeycard(keycard);
+    const setKeycard = KeycardWallet.methods.setKeycard(keycard);
     try {
       await setKeycard.send({
         from: merchant
@@ -90,17 +90,17 @@ contract('TapWallet', () => {
   });
 
   it('setKeycard called by the owner', async () => {
-    const keycardBefore = await TapWallet.methods.keycard().call();
+    const keycardBefore = await KeycardWallet.methods.keycard().call();
     assert.equal(keycardBefore, "0x0000000000000000000000000000000000000000", "keycard should be empty");
 
     await setKeycard();
 
-    const currentKeycard = await TapWallet.methods.keycard().call();
+    const currentKeycard = await KeycardWallet.methods.keycard().call();
     assert.equal(currentKeycard, keycard, "current keycard address is wrong");
   });
 
   it('requestPayment with bad signature', async () => {
-    const nonce = await TapWallet.methods.nonce().call();
+    const nonce = await KeycardWallet.methods.nonce().call();
     const to = merchant;
     const value = 10;
 
@@ -109,7 +109,7 @@ contract('TapWallet', () => {
     const sig = await web3.eth.sign(message, merchant);
     const hashToSign = await web3.eth.accounts.hashMessage(message);
 
-    const requestPayment = TapWallet.methods.requestPayment(hashToSign, sig, nonce, to, value);
+    const requestPayment = KeycardWallet.methods.requestPayment(hashToSign, sig, nonce, to, value);
     try {
       const estimatedGas = await requestPayment.estimateGas();
       await requestPayment.send({
@@ -121,12 +121,12 @@ contract('TapWallet', () => {
       assert.equal(getErrorReason(err), "signer is not the keycard");
     }
 
-    const pendingWithdrawal = await TapWallet.methods.pendingWithdrawals(merchant).call();
+    const pendingWithdrawal = await KeycardWallet.methods.pendingWithdrawals(merchant).call();
     assert.equal(pendingWithdrawal, 0);
   });
 
   it('requestPayment with bad nonce', async () => {
-    let nonce = await TapWallet.methods.nonce().call();
+    let nonce = await KeycardWallet.methods.nonce().call();
     // increment nonce making it invalid
     nonce++;
 
@@ -137,7 +137,7 @@ contract('TapWallet', () => {
     const sig = await web3.eth.sign(message, keycard);
     const hashToSign = await web3.eth.accounts.hashMessage(message);
 
-    const requestPayment = TapWallet.methods.requestPayment(hashToSign, sig, nonce, to, value);
+    const requestPayment = KeycardWallet.methods.requestPayment(hashToSign, sig, nonce, to, value);
     try {
       const estimatedGas = await requestPayment.estimateGas();
       await requestPayment.send({
@@ -149,12 +149,12 @@ contract('TapWallet', () => {
       assert.equal(getErrorReason(err), "invalid nonce");
     }
 
-    const pendingWithdrawal = await TapWallet.methods.pendingWithdrawals(merchant).call();
+    const pendingWithdrawal = await KeycardWallet.methods.pendingWithdrawals(merchant).call();
     assert.equal(pendingWithdrawal, 0);
   });
 
   it('requestPayment with params different from signed params', async () => {
-    const nonce = await TapWallet.methods.nonce().call();
+    const nonce = await KeycardWallet.methods.nonce().call();
     const to = merchant;
     const value = 10;
 
@@ -164,7 +164,7 @@ contract('TapWallet', () => {
     const badMessage = await web3.utils.soliditySha3(nonce, to, value + 100);
     const hashFromBadParams = await web3.eth.accounts.hashMessage(badMessage);
 
-    const requestPayment = TapWallet.methods.requestPayment(hashFromBadParams, sig, nonce, to, value);
+    const requestPayment = KeycardWallet.methods.requestPayment(hashFromBadParams, sig, nonce, to, value);
     try {
       const estimatedGas = await requestPayment.estimateGas();
       const receipt = await requestPayment.send({
@@ -177,12 +177,12 @@ contract('TapWallet', () => {
     }
 
 
-    const pendingWithdrawal = await TapWallet.methods.pendingWithdrawals(merchant).call();
+    const pendingWithdrawal = await KeycardWallet.methods.pendingWithdrawals(merchant).call();
     assert.equal(pendingWithdrawal, 0);
   });
 
   it('setSettings needs to be called by the owner', async () => {
-    const setSettings = TapWallet.methods.setSettings(1);
+    const setSettings = KeycardWallet.methods.setSettings(1);
     try {
       const receipt = await setSettings.send({
         from: merchant
@@ -194,20 +194,20 @@ contract('TapWallet', () => {
   });
 
   it('setSettings called by the owner', async () => {
-    const settingsBefore = await TapWallet.methods.settings().call();
+    const settingsBefore = await KeycardWallet.methods.settings().call();
     assert.equal(settingsBefore, 0);
 
-    const setSettings = TapWallet.methods.setSettings(100);
+    const setSettings = KeycardWallet.methods.setSettings(100);
     await setSettings.send({
       from: owner
     });
 
-    const currentSettings = await TapWallet.methods.settings().call();
+    const currentSettings = await KeycardWallet.methods.settings().call();
     assert.equal(currentSettings, 100);
   });
 
   it('requestPayment with value greater than maxTxValue', async () => {
-    const nonce = await TapWallet.methods.nonce().call();
+    const nonce = await KeycardWallet.methods.nonce().call();
     const to = merchant;
     const value = 1000;
 
@@ -215,7 +215,7 @@ contract('TapWallet', () => {
     const sig = await web3.eth.sign(message, keycard);
     const hashToSign = await web3.eth.accounts.hashMessage(message);
 
-    const requestPayment = TapWallet.methods.requestPayment(hashToSign, sig, nonce, to, value);
+    const requestPayment = KeycardWallet.methods.requestPayment(hashToSign, sig, nonce, to, value);
     try {
       const estimatedGas = await requestPayment.estimateGas();
       const receipt = await requestPayment.send({
@@ -229,7 +229,7 @@ contract('TapWallet', () => {
   });
 
   it('requestPayment', async () => {
-    const nonce = await TapWallet.methods.nonce().call();
+    const nonce = await KeycardWallet.methods.nonce().call();
     const to = merchant;
     const value = 10;
 
@@ -237,7 +237,7 @@ contract('TapWallet', () => {
     const sig = await web3.eth.sign(message, keycard);
     const hashToSign = await web3.eth.accounts.hashMessage(message);
 
-    const requestPayment = TapWallet.methods.requestPayment(hashToSign, sig, nonce, to, value);
+    const requestPayment = KeycardWallet.methods.requestPayment(hashToSign, sig, nonce, to, value);
     const estimatedGas = await requestPayment.estimateGas();
     const receipt = await requestPayment.send({
       from: merchant,
@@ -249,16 +249,16 @@ contract('TapWallet', () => {
     assert.equal(event.returnValues.to, merchant);
     assert.equal(event.returnValues.value, value);
 
-    const pendingWithdrawal = await TapWallet.methods.pendingWithdrawals(merchant).call();
+    const pendingWithdrawal = await KeycardWallet.methods.pendingWithdrawals(merchant).call();
     assert.equal(pendingWithdrawal, value);
   });
 
   it('withdraw from address without pendingWithdrawal', async () => {
     const withdrawalValue = 1;
-    const pendingWithdrawalBefore = await TapWallet.methods.pendingWithdrawals(thief).call();
+    const pendingWithdrawalBefore = await KeycardWallet.methods.pendingWithdrawals(thief).call();
     assert.equal(pendingWithdrawalBefore, 0);
 
-    const withdraw = TapWallet.methods.withdraw();
+    const withdraw = KeycardWallet.methods.withdraw();
     try {
       const receipt = await withdraw.send({ from: thief });
       assert.fail("withdraw should have failed");
@@ -270,10 +270,10 @@ contract('TapWallet', () => {
   it('withdraw', async () => {
     const withdrawalValue = 10;
     const merchantBalanceBefore = await web3.eth.getBalance(merchant);
-    const pendingWithdrawalBefore = await TapWallet.methods.pendingWithdrawals(merchant).call();
+    const pendingWithdrawalBefore = await KeycardWallet.methods.pendingWithdrawals(merchant).call();
     assert.equal(pendingWithdrawalBefore, withdrawalValue);
 
-    const withdraw = TapWallet.methods.withdraw();
+    const withdraw = KeycardWallet.methods.withdraw();
     const receipt = await withdraw.send({ from: merchant });
     const event = receipt.events.NewWithdrawal;
     assert.equal(event.returnValues.to, merchant);
@@ -282,7 +282,7 @@ contract('TapWallet', () => {
     const gasPrice = await web3.eth.getGasPrice();
     const fullTxPrice = (new web3.utils.BN(gasPrice)).mul(new web3.utils.BN(receipt.gasUsed));
 
-    const pendingWithdrawalAfter = await TapWallet.methods.pendingWithdrawals(merchant).call();
+    const pendingWithdrawalAfter = await KeycardWallet.methods.pendingWithdrawals(merchant).call();
     assert.equal(pendingWithdrawalAfter, 0);
 
     const expectedMerchantBalance = (new web3.utils.BN(merchantBalanceBefore)).sub(fullTxPrice).add(new web3.utils.BN(withdrawalValue));
@@ -291,11 +291,11 @@ contract('TapWallet', () => {
   });
 
   it('withdraw error on 0 pendingWithdrawal', async () => {
-    const pendingWithdrawal = await TapWallet.methods.pendingWithdrawals(merchant).call();
+    const pendingWithdrawal = await KeycardWallet.methods.pendingWithdrawals(merchant).call();
     assert.equal(pendingWithdrawal, 0);
 
     try {
-      await TapWallet.methods.withdraw().send({ from: merchant });
+      await KeycardWallet.methods.withdraw().send({ from: merchant });
       assert.fail("withdraw should have failed");
     } catch(err) {
       assert.equal(getErrorReason(err), "no pending withdrawal");

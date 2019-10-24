@@ -1,11 +1,11 @@
-const TapWalletFactory = require('Embark/contracts/TapWalletFactory');
+const KeycardWalletFactory = require('Embark/contracts/KeycardWalletFactory');
 
 let owner,
   merchant;
 
 config({
   contracts: {
-    TapWalletFactory: {}
+    KeycardWalletFactory: {}
   }
 }, (err, _accounts) => {
   owner = _accounts[0];
@@ -21,14 +21,14 @@ const getErrorReason = (err) => {
   return errors[0];
 }
 
-contract('TapWalletFactory', () => {
+contract('KeycardWalletFactory', () => {
   it ('create', async () => {
     const zeroAddress = "0x0000000000000000000000000000000000000000";
 
-    const ownerWalletsCountBefore = await TapWalletFactory.methods.ownerWalletsCount(owner).call();
+    const ownerWalletsCountBefore = await KeycardWalletFactory.methods.ownerWalletsCount(owner).call();
     assert.equal(ownerWalletsCountBefore, 0);
 
-    const create = TapWalletFactory.methods.create("0x010203", zeroAddress, 0);
+    const create = KeycardWalletFactory.methods.create("0x010203", zeroAddress, 0);
     const receipt = await create.send({
       from: owner
     });
@@ -38,7 +38,7 @@ contract('TapWalletFactory', () => {
     assert.notEqual(walletAddress, zeroAddress);
     assert.equal(event.returnValues.name, "0x010203", "name in event should be 0x01020304");
 
-    const ownerWalletsCountAfter = await TapWalletFactory.methods.ownerWalletsCount(owner).call();
+    const ownerWalletsCountAfter = await KeycardWalletFactory.methods.ownerWalletsCount(owner).call();
     assert.equal(ownerWalletsCountAfter, 1);
   });
 });

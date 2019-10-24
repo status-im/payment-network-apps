@@ -53,7 +53,7 @@ module.exports = {
     strategy: 'explicit',
 
     contracts: {
-      TapWalletFactory: {}
+      KeycardWalletFactory: {}
     }
   },
 
