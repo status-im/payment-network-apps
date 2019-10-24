@@ -39,7 +39,6 @@ module.exports = {
     // Automatically call `ethereum.enable` if true.
     // If false, the following code must run before sending any transaction: `await EmbarkJS.enableEthereum();`
     // Default value is true.
-    // dappAutoEnable: true,
     dappAutoEnable: false,
 
     gas: "auto",
@@ -51,6 +50,11 @@ module.exports = {
     // - explicit will only attempt to deploy the contracts that are explicitly specified inside the
     //            contracts section.
     strategy: 'explicit',
+
+    // minimalContractSize, when set to true, tells Embark to generate contract files without the heavy bytecodes
+    // Using filteredFields lets you customize which field you want to filter out of the contract file (requires minimalContractSize: true)
+    // minimalContractSize: false,
+    // filteredFields: [],
 
     contracts: {
       KeycardWalletFactory: {}
