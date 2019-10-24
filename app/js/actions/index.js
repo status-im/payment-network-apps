@@ -236,6 +236,7 @@ export const loadWallet = (owner, index) => {
     } catch(e){}
 
     dispatch(walletLoaded(index, address, nonce, name, keycardAddress, balance, icon, maxTxValue))
+    // FIXME: change it with an alternative to continuous fetching
     dispatch(watchWallet(walletContract, index, nonce))
   };
 }
