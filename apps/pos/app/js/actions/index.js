@@ -1,6 +1,6 @@
 import EmbarkJS from 'Embark/EmbarkJS';
-import TapWalletFactory from 'Embark/contracts/TapWalletFactory';
-import TapWallet from 'Embark/contracts/TapWallet';
+import KeycardWalletFactory from 'Embark/contracts/KeycardWalletFactory';
+import KeycardWallet from 'Embark/contracts/KeycardWallet';
 import { emptyAddress } from '../utils';
 
 export const NEW_WALLET = 'NEW_WALLET';
@@ -196,7 +196,7 @@ export const loadWallet = (walletAddress) => {
   return async (dispatch) => {
     dispatch(loadingWallet())
 
-    const jsonInterface = TapWallet.options.jsonInterface;
+    const jsonInterface = KeycardWallet.options.jsonInterface;
     const walletContract = new EmbarkJS.Blockchain.Contract({
       abi: jsonInterface,
       address: walletAddress,
@@ -237,7 +237,7 @@ export const walletFound = (address) => ({
 export const findWallet = (keycardAddress) => {
   return async (dispatch) => {
     dispatch(findingWallet());
-    TapWalletFactory.methods.keycardsWallets(keycardAddress).call()
+    KeycardWalletFactory.methods.keycardsWallets(keycardAddress).call()
       .then((address) => {
         dispatch(walletFound(address))
         dispatch(loadWallet(address))

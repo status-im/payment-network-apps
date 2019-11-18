@@ -3,7 +3,7 @@ import React from 'react';
 import EmbarkJS from 'Embark/EmbarkJS';
 
 import Pos from "../containers/Pos"
-import TapWalletFactory from 'Embark/contracts/TapWalletFactory';
+import KeycardWalletFactory from 'Embark/contracts/KeycardWalletFactory';
 
 import { withStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
@@ -40,7 +40,7 @@ const App = (props) => {
           <Typography variant="h6" color="inherit">
             Keycard POS
             <Typography variant="caption" color="inherit">
-              {compressedAddress(TapWalletFactory.address)} {networkText}
+              {compressedAddress(KeycardWalletFactory.address)} {networkText}
             </Typography>
           </Typography>
         </Toolbar>
