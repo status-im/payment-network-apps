@@ -49,7 +49,7 @@ module.exports = {
     //            when not specified
     // - explicit will only attempt to deploy the contracts that are explicitly specified inside the
     //            contracts section.
-    //strategy: 'implicit',
+    strategy: 'explicit',
 
     // minimalContractSize, when set to true, tells Embark to generate contract files without the heavy bytecodes
     // Using filteredFields lets you customize which field you want to filter out of the contract file (requires minimalContractSize: true)
@@ -57,10 +57,7 @@ module.exports = {
     // filteredFields: [],
 
     contracts: {
-      // example:
-      //SimpleStorage: {
-      //  args: [ 100 ]
-      //}
+      KeycardWalletFactory: {},
     }
   },
 

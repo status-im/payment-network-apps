@@ -57,14 +57,8 @@ module.exports = {
     // filteredFields: [],
 
     contracts: {
-      KeycardWalletFactory: {
-        file: "../contracts/KeycardWalletFactory.sol"
-      },
-      KeycardWallet: {
-        deploy: false,
-        file: "../contracts/KeycardWallet.sol"
-      }
-    }
+      KeycardWalletFactory: {},
+    },
   },
 
   // default environment, merges with the settings in default
