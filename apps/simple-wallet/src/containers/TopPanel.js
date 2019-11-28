@@ -1,28 +1,28 @@
-import { connect } from 'react-redux';
-import TopPanel from '../components/TopPanel';
+// import { connect } from 'react-redux';
+// import TopPanel from '../components/TopPanel';
 
-const mapStateToProps = state => {
-  const totalWei = state.wallets.filter((wallet) => wallet).reduce((acc, w) => {
-    return acc.add(new window.web3.utils.BN(w.balance))
-  }, new window.web3.utils.BN(0));
+// const mapStateToProps = state => {
+//   const totalWei = state.wallets.filter((wallet) => wallet).reduce((acc, w) => {
+//     return acc.add(new window.web3.utils.BN(w.balance))
+//   }, new window.web3.utils.BN(0));
 
-  const fullTotal = window.web3.utils.fromWei(totalWei);
-  const parts = fullTotal.split(".");
-  let total = parts[0];
-  let decimals = (parts[1] || "").slice(0, 4)
-  if (decimals.length > 0) {
-    total = `${total}.${decimals}`;
-  }
+//   const fullTotal = window.web3.utils.fromWei(totalWei);
+//   const parts = fullTotal.split(".");
+//   let total = parts[0];
+//   let decimals = (parts[1] || "").slice(0, 4)
+//   if (decimals.length > 0) {
+//     total = `${total}.${decimals}`;
+//   }
 
-  return {
-    total: total,
-    fullTotal: fullTotal,
-  }
-}
+//   return {
+//     total: total,
+//     fullTotal: fullTotal,
+//   }
+// }
 
-const mapDispatchToProps = dispatch => ({});
+// const mapDispatchToProps = dispatch => ({});
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(TopPanel);
+// export default connect(
+//   mapStateToProps,
+//   mapDispatchToProps
+// )(TopPanel);

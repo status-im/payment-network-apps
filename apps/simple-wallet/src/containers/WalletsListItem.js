@@ -1,17 +1,17 @@
-import { connect } from 'react-redux';
-import WalletsListItem from '../components/WalletsListItem';
-import { selectWallet } from '../actions';
+//import { connect } from 'react-redux';
+//import WalletsListItem from '../components/WalletsListItem';
+//import { selectWallet } from '../actions';
 
-const mapStateToProps = state => ({
-  //FIXME: hack
-  wallets: state.wallets,
-});
+//const mapStateToProps = state => ({
+//  //FIXME: hack
+//  wallets: state.wallets,
+//});
 
-const mapDispatchToProps = dispatch => ({
-  onItemClick: (index) => dispatch(selectWallet(index))
-});
+//const mapDispatchToProps = dispatch => ({
+//  onItemClick: (index) => dispatch(selectWallet(index))
+//});
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(WalletsListItem);
+//export default connect(
+//  mapStateToProps,
+//  mapDispatchToProps
+//)(WalletsListItem);
