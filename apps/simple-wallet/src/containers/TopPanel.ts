@@ -1,7 +1,9 @@
 import { connect } from 'react-redux';
 import { RootState } from '../reducers';
+import { MouseEvent } from 'react';
 import { Dispatch } from 'redux';
 import TopPanel from '../components/TopPanel';
+import { showWalletQRCode } from '../actions/wallet';
 
 export interface StateProps {
   balance: string
@@ -9,6 +11,7 @@ export interface StateProps {
 }
 
 export interface DispatchProps {
+  handleReceive: (e: MouseEvent) => any
 }
 
 export type Props = StateProps & DispatchProps;
@@ -29,7 +32,12 @@ const mapStateToProps = (state: RootState): StateProps => {
   }
 }
 
-const mapDispatchToProps = (dispatch: Dispatch) => ({});
+const mapDispatchToProps = (dispatch: Dispatch) => ({
+  handleReceive: (e: MouseEvent) => {
+    e.preventDefault();
+    dispatch(showWalletQRCode());
+  }
+});
 
 export default connect(
   mapStateToProps,

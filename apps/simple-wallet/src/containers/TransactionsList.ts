@@ -23,7 +23,7 @@ const mapStateToProps = (state: RootState): StateProps => {
 
   const transactions: TransactionState[] = [];
   for (const txHash in state.transactions) {
-    transactions.push(state.transactions[txHash]);
+    transactions.unshift(state.transactions[txHash]);
   }
 
   return {

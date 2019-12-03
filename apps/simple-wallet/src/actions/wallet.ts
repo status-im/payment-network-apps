@@ -46,13 +46,20 @@ export interface WalletBalanceLoadedAction {
   balance: string
 }
 
+export const WALLET_TOGGLE_QRCODE = "WALLET_TOGGLE_QRCODE";
+export interface WalletToggleQRCodeAction {
+  type: typeof WALLET_TOGGLE_QRCODE
+  open: boolean
+}
+
 export type WalletActions =
   WalletKeycardAddressNotSpecifiedAction |
   WalletFactoryLoadingWalletAddressAction |
   WalletFactoryWalletAddressLoadedAction |
   WalletFactoryKeycardNotFoundAction |
   WalletLoadingBalanceAction |
-  WalletBalanceLoadedAction;
+  WalletBalanceLoadedAction |
+  WalletToggleQRCodeAction;
 
 export const keycardAddressNotSpecified = (): WalletKeycardAddressNotSpecifiedAction => ({
   type: WALLET_KEYCARD_ADDRESS_NOT_SPECIFIED,
@@ -82,6 +89,16 @@ export const loadingWalletBalance = (address: string): WalletLoadingBalanceActio
 export const balanceLoaded = (balance: string): WalletBalanceLoadedAction => ({
   type: WALLET_BALANCE_LOADED,
   balance,
+});
+
+export const showWalletQRCode = (): WalletToggleQRCodeAction => ({
+  type: WALLET_TOGGLE_QRCODE,
+  open: true,
+});
+
+export const hideWalletQRCode = (): WalletToggleQRCodeAction => ({
+  type: WALLET_TOGGLE_QRCODE,
+  open: false,
 });
 
 export const loadWallet = (dispatch: Dispatch, getState: () => RootState) => {

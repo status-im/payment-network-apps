@@ -6,6 +6,7 @@ import {
   WALLET_FACTORY_WALLET_ADDRESS_LOADED,
   WALLET_LOADING_BALANCE,
   WALLET_BALANCE_LOADED,
+  WALLET_TOGGLE_QRCODE,
 } from '../actions/wallet';
 
 export interface WalletState {
@@ -15,6 +16,7 @@ export interface WalletState {
   walletFound: boolean
   balance: string
   error: string | undefined
+  showWalletQRCode: boolean
 }
 
 const initialState = {
@@ -24,10 +26,18 @@ const initialState = {
   walletFound: false,
   balance: "",
   error: undefined,
+  showWalletQRCode: false,
 };
 
 export const walletReducer = (state: WalletState = initialState, action: WalletActions): WalletState => {
   switch (action.type) {
+    case WALLET_TOGGLE_QRCODE: {
+      return {
+        ...state,
+        showWalletQRCode: action.open,
+      }
+    }
+
     case WALLET_KEYCARD_ADDRESS_NOT_SPECIFIED: {
       return {
         ...state,

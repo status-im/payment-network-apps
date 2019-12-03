@@ -1,4 +1,5 @@
 import React from 'react';
+import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import { Props } from '../containers/TopPanel';
@@ -15,7 +16,18 @@ const useStyles = makeStyles(theme => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-  }
+  },
+  actions: {
+    textAlign: "center",
+    paddingTop: 20,
+  },
+  button: {
+    color: "#fff",
+    borderColor: "#fff",
+    "&:hover": {
+      borderColor: "#fff",
+    }
+  },
 }));
 
 const TopPanel = (props: Props) => {
@@ -29,6 +41,13 @@ const TopPanel = (props: Props) => {
       <Typography variant="body1" color="inherit" style={{textAlign: "center"}}>
         {props.balance}
       </Typography>
+      <div className={classes.actions}>
+        <Button
+          className={classes.button}
+          variant="outlined"
+          color="primary"
+          onClick={props.handleReceive}>Receive</Button>
+      </div>
     </div>
   </div>
 }

@@ -1,9 +1,8 @@
 import React from 'react';
 
 import TransactionsList from '../containers/TransactionsList';
-// import NewWalletDialog from '../containers/NewWalletDialog';
-
 import TopPanel from '../containers/TopPanel';
+import ReceiveDialog from '../containers/ReceiveDialog';
 
 import { makeStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
@@ -83,6 +82,8 @@ const App = (props: Props) => {
         <div className={classes.error}>
           {props.walletError}
         </div>
+
+        <ReceiveDialog />
       </div>
 
     </div>
