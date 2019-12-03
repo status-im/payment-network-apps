@@ -209,6 +209,23 @@ export const abi: AbiItem[] = [
     "inputs": [
       {
         "indexed": false,
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "TopUp",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
         "name": "nonce",
         "type": "uint256"
       },

@@ -11,13 +11,13 @@ export interface Web3State {
   error: string | undefined
 }
 
-const initialState = {
+const initialState: Web3State = {
   initialized: false,
   networkID: undefined,
   error: undefined,
 };
 
-export function web3Reducer(state: Web3State = initialState, action: Web3Actions): Web3State {
+export const web3Reducer = (state: Web3State = initialState, action: Web3Actions): Web3State => {
   switch (action.type) {
     case WEB3_INITIALIZED: {
       return {

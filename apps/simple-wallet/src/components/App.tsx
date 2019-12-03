@@ -1,7 +1,9 @@
 import React from 'react';
 
-// import WalletsList from '../containers/WalletsList';
+import TransactionsList from '../containers/TransactionsList';
 // import NewWalletDialog from '../containers/NewWalletDialog';
+
+import TopPanel from '../containers/TopPanel';
 
 import { makeStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
@@ -19,13 +21,26 @@ const useStyles = makeStyles(theme => ({
   container: {
     paddingTop: 64,
     [theme.breakpoints.only('xs')]: {
-      paddingTop: 48,
+      // paddingTop: 48,
+      paddingTop: 56,
     },
   },
   loading: {
     textAlign: "center",
     marginTop: 100,
-  }
+  },
+  main: {
+    position: 'relative'
+  },
+  error: {
+    position: 'absolute',
+    width: '100%',
+    top: '0',
+    left: '0',
+    textAlign: 'center',
+    background: 'red',
+    color: 'white',
+  },
 }));
 
 const App = (props: Props) => {
@@ -37,14 +52,16 @@ const App = (props: Props) => {
 
   let body = loading;
 
+  //FIXME: check if loading
   if (props.web3Initialized) {
-    body = <>Loaded</>
+    body = <>
+      <TopPanel />
+      <TransactionsList />
+    </>;
   }
-  // if (!props.loadingWeb3 && !props.loadingOwner) {
-  //   body = <WalletsList />
-  // }
 
   const networkText = props.networkID ? `(Net ID: ${props.networkID})` : "";
+  const walletAddress = props.walletAddress ? compressedAddress(props.walletAddress) : "";
 
   return (
     <div className={classes.container}>
@@ -52,21 +69,24 @@ const App = (props: Props) => {
       <AppBar style={{ backgroundColor: "#0e1c36" }}>
         <Toolbar>
           <Typography variant="h6" color="inherit">
-            Keycard Wallet
+            Keycard Wallet &nbsp;
             <Typography variant="caption" color="inherit">
-              KeycardWalletFactory.address {networkText}
+              {walletAddress} &nbsp;
+              {networkText}
             </Typography>
           </Typography>
         </Toolbar>
       </AppBar>
 
-      <div>
+      <div className={classes.main}>
         {body}
+        <div className={classes.error}>
+          {props.walletError}
+        </div>
       </div>
 
     </div>
   );
 };
 
-// export default withStyles(styles)(App);
 export default App;

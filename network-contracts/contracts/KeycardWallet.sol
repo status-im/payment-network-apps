@@ -1,6 +1,7 @@
 pragma solidity ^0.5.0;
 
 contract KeycardWallet {
+  event TopUp(address from, uint256 value);
   event NewPaymentRequest(uint256 nonce, address to, uint256 value);
   event NewWithdrawal(address to, uint256 value);
 
@@ -21,7 +22,9 @@ contract KeycardWallet {
   }
 
   // anyone can add funds to the wallet
-  function () external payable {}
+  function () external payable {
+    emit TopUp(msg.sender, msg.value);
+  }
 
   constructor(bytes3 _name, address _keycard, uint256 _maxTxValue) public {
     owner = msg.sender;
