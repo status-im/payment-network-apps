@@ -4,6 +4,7 @@ import { MouseEvent } from 'react';
 import { Dispatch } from 'redux';
 import TopPanel from '../components/TopPanel';
 import { showWalletQRCode } from '../actions/wallet';
+import Web3 from 'web3';
 
 export interface StateProps {
   balance: string
@@ -17,7 +18,7 @@ export interface DispatchProps {
 export type Props = StateProps & DispatchProps;
 
 const mapStateToProps = (state: RootState): StateProps => {
-  const web3 = (window as any).web3;
+  const web3: Web3 = (window as any).web3;
   const fullTotal = state.wallet.balance ? web3.utils.fromWei(state.wallet.balance) : "0";
   const parts = fullTotal.split(".");
   let roundedBalance = parts[0];

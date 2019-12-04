@@ -39,6 +39,8 @@ const useStyles = makeStyles(theme => ({
     textAlign: 'center',
     background: 'red',
     color: 'white',
+    padding: "8px 0",
+    fontWeight: "bold",
   },
 }));
 
@@ -79,9 +81,9 @@ const App = (props: Props) => {
 
       <div className={classes.main}>
         {body}
-        <div className={classes.error}>
+        {props.walletError !== undefined && <div className={classes.error}>
           {props.walletError}
-        </div>
+        </div>}
 
         <ReceiveDialog />
       </div>

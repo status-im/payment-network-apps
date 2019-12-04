@@ -52,7 +52,9 @@ export const web3Error = (error: string): Web3Actions => {
 
 export const initializeWeb3 = () => {
   //FIXME: move to config
-  const web3 = new Web3('https://ropsten.infura.io/v3/f315575765b14720b32382a61a89341a');
+  // const web3 = new Web3('https://ropsten.infura.io/v3/f315575765b14720b32382a61a89341a');
+  // const web3 = new Web3(new Web3.providers.HttpProvider('https://ropsten.infura.io/v3/f315575765b14720b32382a61a89341a'));
+  const web3 = new Web3(new Web3.providers.WebsocketProvider('wss://ropsten.infura.io/ws/v3/f315575765b14720b32382a61a89341a'));
   (window as any).web3 = web3;
 
 

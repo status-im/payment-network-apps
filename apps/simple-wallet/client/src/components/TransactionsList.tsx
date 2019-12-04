@@ -54,9 +54,10 @@ const WalletsList = (props: Props) => {
     <List>
       {props.transactions.map((tx) => (
         <TransactionsListItem key={tx.id}
+          pending={tx.pending}
           from={tx.from}
           to={tx.to}
-          value={tx.value}
+          valueInETH={tx.valueInETH}
           transactionHash={tx.transactionHash} />
       ))}
     </List>

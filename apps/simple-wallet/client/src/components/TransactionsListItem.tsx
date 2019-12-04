@@ -16,9 +16,10 @@ import {
 
 export interface Props {
   transactionHash: string
+  pending: boolean | undefined
   from: string | undefined
   to: string | undefined
-  value: string
+  valueInETH: string
 }
 
 
@@ -70,10 +71,11 @@ const TransactionsListItem = (props: Props) => {
       <ListItem button>
         <ListItemAvatar>
           <Avatar className={classes.avatar}>
+            {(props.pending === true || props.pending == undefined) && <CircularProgress color="secondary" className={classes.avatarLoading}/>}
             <TransactionInIcon />
           </Avatar>
         </ListItemAvatar>
-        <StyledListItemText primary={`${props.value} Ξ`} secondary={secondary} />
+        <StyledListItemText primary={`${props.valueInETH} Ξ`} secondary={secondary} />
       </ListItem>
       <Divider />
     </>
