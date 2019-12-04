@@ -6,3 +6,4 @@ coverage
 dist
 embarkArtifacts
 node_modules
+react-app-env.d.ts
