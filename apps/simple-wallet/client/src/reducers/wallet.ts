@@ -10,6 +10,7 @@ import {
 } from '../actions/wallet';
 
 export interface WalletState {
+  ready: boolean
   loading: boolean
   keycardAddress: string | undefined
   walletAddress: string | undefined
@@ -20,6 +21,7 @@ export interface WalletState {
 }
 
 const initialState = {
+  ready: false,
   loading: false,
   keycardAddress: undefined,
   walletAddress: undefined,
@@ -56,14 +58,23 @@ export const walletReducer = (state: WalletState = initialState, action: WalletA
     case WALLET_FACTORY_WALLET_ADDRESS_LOADED: {
       return {
         ...state,
+        loading: false,
         walletFound: true,
         walletAddress: action.walletAddress,
+      }
+    }
+
+    case WALLET_LOADING_BALANCE: {
+      return {
+        ...state,
+        loading: true,
       }
     }
 
     case WALLET_BALANCE_LOADED: {
       return {
         ...state,
+        ready: true,
         loading: false,
         balance: action.balance,
       }
