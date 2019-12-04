@@ -1,0 +1,13 @@
+{
+  "name": "simple-wallet-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "start": "node index.js",
+    "heroku-postbuild": "cd client && NODE_ENV=development yarn && cd ../ && yarn run build"
+  },
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
