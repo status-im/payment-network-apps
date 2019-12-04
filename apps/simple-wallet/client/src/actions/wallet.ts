@@ -8,7 +8,7 @@ import { loadTransactions } from './transactions';
 
 const walletFactoryAddress = "0x43069D770a44352c94E043aE3F815BfeAfE5b279";
 //FIXME: remove test address
-// const testKeycardAddress = "0xfD51b65f6Dee2aDd1C867c05d5B8d189b9da7060";
+// const testKeycardAddress = "0x13F1e02E78A0636420cDc1BDaE343aDbBfF308F0";
 
 export const WALLET_KEYCARD_ADDRESS_NOT_SPECIFIED = "WALLET_KEYCARD_ADDRESS_NOT_SPECIFIED";
 export interface WalletKeycardAddressNotSpecifiedAction {
@@ -101,7 +101,7 @@ export const hideWalletQRCode = (): WalletToggleQRCodeAction => ({
   open: false,
 });
 
-export const loadWallet = (dispatch: Dispatch, getState: () => RootState) => {
+export const loadWallet = (web3: Web3, dispatch: Dispatch, getState: () => RootState) => {
   const params = new URLSearchParams(window.location.search);
   const keycardAddress = params.get("address");
   if (keycardAddress === null) {
@@ -110,7 +110,6 @@ export const loadWallet = (dispatch: Dispatch, getState: () => RootState) => {
   }
 
   dispatch(loadingWalletAddress(keycardAddress));
-  const web3: Web3 = (window as any).web3;
   const factory = new web3.eth.Contract(keycardWalletFactoryABI, walletFactoryAddress);
   factory.methods.keycardsWallets(keycardAddress).call().then((walletAddress: string) => {
     if (isEmptyAddress(walletAddress)) {
@@ -122,7 +121,7 @@ export const loadWallet = (dispatch: Dispatch, getState: () => RootState) => {
     dispatch(loadingWalletBalance(walletAddress));
 
     const wallet = new web3.eth.Contract(keycardWalletABI, walletAddress);
-    loadTransactions(dispatch, getState, wallet);
+    loadTransactions(web3, dispatch, getState, wallet);
 
     return web3.eth.getBalance(walletAddress);
   }).then((balance: string) => {

@@ -1,6 +1,7 @@
 import Web3 from 'web3';
 import {
   TXS_TRANSACTION_DISCOVERED,
+  TXS_TRANSACTION_CONFIRMED,
   TxsActions,
 } from '../actions/transactions';
 
@@ -15,7 +16,7 @@ export interface TransactionState {
 }
 
 export interface TransactionsState {
-  [txID: string]: TransactionState
+  [txHash: string]: TransactionState
 };
 
 const newTransactionState = (): TransactionState => ({
@@ -59,6 +60,22 @@ export const transactionsReducer = (state: TransactionsState = initialState, act
           to: action.to,
           value: action.value,
           valueInETH: valueInETH,
+        }
+      }
+    }
+
+    case TXS_TRANSACTION_CONFIRMED: {
+      const web3: Web3 = (window as any).web3;
+      const txState: TransactionState = state[action.transactionHash];
+      if (txState === undefined) {
+        return state;
+      }
+
+      return {
+        ...state,
+        [action.transactionHash]: {
+          ...txState,
+          pending: false,
         }
       }
     }
