@@ -197,13 +197,13 @@ contract('KeycardWallet', () => {
     const settingsBefore = await KeycardWallet.methods.settings().call();
     assert.equal(settingsBefore, 0);
 
-    const setSettings = KeycardWallet.methods.setSettings(100);
+    const setSettings = KeycardWallet.methods.setSettings(999);
     await setSettings.send({
       from: owner
     });
 
     const currentSettings = await KeycardWallet.methods.settings().call();
-    assert.equal(currentSettings, 100);
+    assert.equal(currentSettings, 999);
   });
 
   it('requestPayment with value greater than maxTxValue', async () => {
@@ -228,6 +228,28 @@ contract('KeycardWallet', () => {
     }
   });
 
+  it('requestPayment with value greater than balance', async () => {
+    const nonce = await KeycardWallet.methods.nonce().call();
+    const to = merchant;
+    const value = 101;
+
+    const message = await web3.utils.soliditySha3(nonce, to, value);
+    const sig = await web3.eth.sign(message, keycard);
+    const hashToSign = await web3.eth.accounts.hashMessage(message);
+
+    const requestPayment = KeycardWallet.methods.requestPayment(hashToSign, sig, nonce, to, value);
+    try {
+      const estimatedGas = await requestPayment.estimateGas();
+      const receipt = await requestPayment.send({
+        from: merchant,
+        gas: estimatedGas
+      });
+     assert.fail("requestPayment should have failed");
+    } catch (err) {
+      assert.equal(getErrorReason(err), "balance is not enough");
+    }
+  });  
+
   it('requestPayment', async () => {
     const nonce = await KeycardWallet.methods.nonce().call();
     const to = merchant;
@@ -251,7 +273,33 @@ contract('KeycardWallet', () => {
 
     const pendingWithdrawal = await KeycardWallet.methods.pendingWithdrawals(merchant).call();
     assert.equal(pendingWithdrawal, value);
+
+    const totalPendingWithdrawal = await KeycardWallet.methods.totalPendingWithdrawals().call();
+    assert.equal(totalPendingWithdrawal, value);    
   });
+
+  it('requestPayment with value greater than available balance', async () => {
+    const nonce = await KeycardWallet.methods.nonce().call();
+    const to = merchant;
+    const value = 100;
+
+    const message = await web3.utils.soliditySha3(nonce, to, value);
+    const sig = await web3.eth.sign(message, keycard);
+    const hashToSign = await web3.eth.accounts.hashMessage(message);
+
+    const requestPayment = KeycardWallet.methods.requestPayment(hashToSign, sig, nonce, to, value);
+    try {
+      const estimatedGas = await requestPayment.estimateGas();
+      const receipt = await requestPayment.send({
+        from: merchant,
+        gas: estimatedGas
+      });
+     
+      assert.fail("requestPayment should have failed");
+    } catch (err) {
+      assert.equal(getErrorReason(err), "balance is not enough");
+    }
+  });  
 
   it('withdraw from address without pendingWithdrawal', async () => {
     const withdrawalValue = 1;
@@ -284,6 +332,9 @@ contract('KeycardWallet', () => {
 
     const pendingWithdrawalAfter = await KeycardWallet.methods.pendingWithdrawals(merchant).call();
     assert.equal(pendingWithdrawalAfter, 0);
+
+    const totalPendingWithdrawalAfter = await KeycardWallet.methods.totalPendingWithdrawals().call();
+    assert.equal(totalPendingWithdrawalAfter, 0);  
 
     const expectedMerchantBalance = (new web3.utils.BN(merchantBalanceBefore)).sub(fullTxPrice).add(new web3.utils.BN(withdrawalValue));
     const merchantBalanceAfter = await web3.eth.getBalance(merchant);

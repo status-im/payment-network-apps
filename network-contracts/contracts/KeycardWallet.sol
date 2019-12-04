@@ -11,6 +11,7 @@ contract KeycardWallet {
   uint256 public nonce;
   Settings public settings;
   mapping(address => uint) public pendingWithdrawals;
+  uint256 public totalPendingWithdrawals;
 
   struct Settings {
     uint256 maxTxValue;
@@ -32,6 +33,7 @@ contract KeycardWallet {
     keycard = _keycard;
     settings.maxTxValue = _maxTxValue;
     nonce = 0;
+    totalPendingWithdrawals = 0;
   }
 
   function setKeycard(address _keycard) public onlyOwner {
@@ -81,16 +83,18 @@ contract KeycardWallet {
     // check that the nonce is valid
     require(nonce == _nonce, "invalid nonce");
 
-    // check that balance is enough for this payment
-    require((address(this).balance - _value) >= 0, "balance is not enough");
-
     // check that _value is not greater than settings.maxTxValue
     require(_value <= settings.maxTxValue, "amount not allowed");
+
+    int256 availableBalance = int256(address(this).balance - totalPendingWithdrawals - _value);
+    // check that balance is enough for this payment
+    require(availableBalance >= 0, "balance is not enough");
 
     // increment nonce
     nonce++;
 
     // add pendingWithdrawal
+    totalPendingWithdrawals += _value;
     pendingWithdrawals[_to] += _value;
 
     emit NewPaymentRequest(_nonce, _to, _value);
@@ -101,6 +105,8 @@ contract KeycardWallet {
     require(amount > 0, "no pending withdrawal");
 
     pendingWithdrawals[msg.sender] = 0;
+    totalPendingWithdrawals -= amount;
+
     msg.sender.transfer(amount);
     emit NewWithdrawal(msg.sender, amount);
   }
