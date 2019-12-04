@@ -118,13 +118,21 @@ export const loadWallet = (web3: Web3, dispatch: Dispatch, getState: () => RootS
     }
 
     dispatch(walletAddressLoaded(keycardAddress, walletAddress));
-    dispatch(loadingWalletBalance(walletAddress));
+    loadBalance(web3, dispatch, walletAddress);
 
     const wallet = new web3.eth.Contract(keycardWalletABI, walletAddress);
     loadTransactions(web3, dispatch, getState, wallet);
-
-    return web3.eth.getBalance(walletAddress);
   }).then((balance: string) => {
+  }).catch((error: string) => {
+    //FIXME: manage error
+    console.log("error", error)
+  })
+}
+
+
+export const loadBalance = (web3: Web3, dispatch: Dispatch, walletAddress: string) => {
+  dispatch(loadingWalletBalance(walletAddress));
+  web3.eth.getBalance(walletAddress).then((balance: string) => {
     dispatch(balanceLoaded(balance));
   }).catch((error: string) => {
     //FIXME: manage error

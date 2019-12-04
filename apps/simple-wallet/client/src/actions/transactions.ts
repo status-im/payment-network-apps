@@ -5,6 +5,7 @@ import { abi as keycardWalletFactoryABI } from '../contracts/KeycardWalletFactor
 import { abi as keycardWalletABI } from '../contracts/KeycardWallet';
 import Web3 from 'web3';
 import { TransactionReceipt } from 'web3-core';
+import { loadBalance } from './wallet';
 
 export const TXS_TRANSACTION_DISCOVERED = "TXS_TRANSACTION_DISCOVERED";
 export interface TxsTransactionDiscoveredAction {
@@ -42,14 +43,17 @@ export const transactionConfirmed = (transactionHash: string): TxsTransactionCon
   transactionHash,
 });
 
-export const watchPendingTransaction = (web3: Web3, dispatch: Dispatch, transactionHash: string) => {
+export const watchPendingTransaction = (web3: Web3, dispatch: Dispatch, walletAddress: string | undefined, transactionHash: string) => {
   web3.eth.getTransactionReceipt(transactionHash).then((tx: TransactionReceipt) => {
     if (tx.status) {
       dispatch(transactionConfirmed(transactionHash));
+      if (walletAddress != undefined) {
+        loadBalance(web3, dispatch, walletAddress);
+      }
       return;
     }
 
-    window.setTimeout(() => watchPendingTransaction(web3, dispatch, transactionHash), 5000)
+    window.setTimeout(() => watchPendingTransaction(web3, dispatch, walletAddress, transactionHash), 5000)
   }).catch((error: string) => {
     //FIXME: handle error
     console.log("error", error)
@@ -76,7 +80,7 @@ export const loadTransactions = (web3: Web3, dispatch: Dispatch, getState: () =>
     wallet.events.TopUp({fromBlock: blockNumber}).on('data', (event: any) => {
       const values = event.returnValues;
       dispatch(topUpDiscovered(event.id, event.transactionHash, true, values.from, walletAddress, values.value));
-      watchPendingTransaction(web3, dispatch, event.transactionHash);
+      watchPendingTransaction(web3, dispatch, walletAddress, event.transactionHash);
     })
   });
 }
