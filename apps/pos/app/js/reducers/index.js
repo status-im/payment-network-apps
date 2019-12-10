@@ -17,6 +17,7 @@ import {
   WALLET_FOUND,
   REQUESTING_PAYMENT,
   PAYMENT_REQUESTED,
+  PAYMENT_AMOUNT_VALUE_CHANGE
 } from "../actions";
 
 const customerInitialState = {
@@ -36,6 +37,7 @@ const initialState = {
   loadingWallet: false,
   requestingPayment: false,
   paymentRequested: false,
+  txAmount: 0
 };
 
 export default function(state, action) {
@@ -124,6 +126,10 @@ export default function(state, action) {
         requestingPayment: false,
         paymentRequested: true,
       });
+    case PAYMENT_AMOUNT_VALUE_CHANGE:
+      return Object.assign({}, state, {
+        txAmount: action.value
+      });      
   }
 
   return state;

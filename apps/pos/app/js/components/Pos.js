@@ -4,10 +4,12 @@ import EmbarkJS from 'Embark/EmbarkJS';
 
 import Paper from '@material-ui/core/Paper';
 import Button from '@material-ui/core/Button';
+import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Fab from '@material-ui/core/Fab';
 import CheckIcon from '@material-ui/icons/Check';
+import InputAdornment from '@material-ui/core/InputAdornment';
 
 export const compressedAddress = (a, padding) => {
   padding = padding || 4;
@@ -22,12 +24,16 @@ const formattedBalance = (balance) => {
   return "";
 }
 
-const Pos = ({requestingPayment, paymentRequested, onTapRequest, customerKeycardAddress, findingWallet, customerWalletAddress, loadingWallet, customerWallet}) => {
+const Pos = ({requestingPayment, paymentRequested, onTapRequest, customerKeycardAddress, findingWallet, customerWalletAddress, loadingWallet, customerWallet, onAmountChange, txAmount}) => {
   return (
     <div style={{paddingTop: 32}}>
       {!requestingPayment && !paymentRequested &&
           <div style={{marginBottom: 32, textAlign: "center"}}>
-            <Button onClick={() => onTapRequest("hello world")} size="large" color="primary" variant="contained">
+            <TextField margin="dense" label="Transaction amount" type="text" style={{marginBottom: 16}} fullWidth
+            onChange={(event) => onAmountChange(event.currentTarget.value)}
+            value = {txAmount}
+            InputProps={{startAdornment: <InputAdornment position="start" style={{paddingBottom: 7}}>Ξ</InputAdornment>}} />
+            <Button onClick={() => onTapRequest()} size="large" color="primary" variant="contained">
               REQUEST PAYMENT
             </Button>
           </div>

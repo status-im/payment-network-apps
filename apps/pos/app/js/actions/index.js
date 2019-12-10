@@ -165,34 +165,24 @@ export const paymentRequested = () => ({
   type: PAYMENT_REQUESTED,
 });
 
-export const signMetaTx = (walletContract, nonce) => {
-  return (dispatch, getState) => {
-    const to = getState().owner;
-    const value = 10;
-    const message = web3.utils.soliditySha3(nonce, to, value);
+export const sendPaymentRequest = (walletContract, message, sig) => {
+  return async (dispatch) => {
 
     try {
       dispatch(requestingPayment())
-      web3.eth.personal.signMessagePinless(message, "0x0000000000000000000000000000000000000000", "", async (err, sig) => {
-        if (err) {
-          alert("err " + err)
-        } else {
-          const signedHash = await web3.eth.accounts.hashMessage(message);
-          const requestPayment = walletContract.methods.requestPayment(signedHash, sig, nonce, to, value);
-          const estimatedGas = await requestPayment.estimateGas();
-          const receipt = await requestPayment.send({
-            gas: estimatedGas
-          });
-          dispatch(paymentRequested())
-        }
+      const requestPayment = walletContract.methods.requestPayment(message, sig);
+      const estimatedGas = await requestPayment.estimateGas();
+      const receipt = await requestPayment.send({
+        gas: estimatedGas
       });
+      dispatch(paymentRequested())
     } catch(err) {
       alert(err)
     }
   }
 }
 
-export const loadWallet = (walletAddress) => {
+export const loadWallet = (walletAddress, message, sig) => {
   return async (dispatch) => {
     dispatch(loadingWallet())
 
@@ -203,7 +193,6 @@ export const loadWallet = (walletAddress) => {
     });
     walletContract.address = walletAddress;
 
-    const nonce = await walletContract.methods.nonce().call();
     const balance = await web3.eth.getBalance(walletAddress);
     const maxTxValue = await walletContract.methods.settings().call();
 
@@ -213,7 +202,7 @@ export const loadWallet = (walletAddress) => {
     } catch(e){}
 
     dispatch(walletLoaded(nonce, balance, maxTxValue))
-    dispatch(signMetaTx(walletContract, nonce))
+    dispatch(sendPaymentRequest(walletContract, message, sig))
   };
 }
 
@@ -234,32 +223,35 @@ export const walletFound = (address) => ({
   address,
 });
 
-export const findWallet = (keycardAddress) => {
+export const PAYMENT_AMOUNT_VALUE_CHANGE = "PAYMENT_AMOUNT_VALUE_CHANGE";
+export const paymentAmountValueChange = (value) => ({
+  type: PAYMENT_AMOUNT_VALUE_CHANGE,
+  value
+});
+
+export const findWallet = (keycardAddress, message, sig) => {
   return async (dispatch) => {
     dispatch(findingWallet());
     KeycardWalletFactory.methods.keycardsWallets(keycardAddress).call()
       .then((address) => {
         dispatch(walletFound(address))
-        dispatch(loadWallet(address))
+        dispatch(loadWallet(address, message, sig))
       })
       .catch((err) => dispatch(web3Error(err)))
   }
 }
 
-export const signMessagePinless = (message) => {
+export const requestPayment = () => {
   return (dispatch, getState) => {
-    const owner = getState().owner;
-    // web3 0.2 style using status injected web3
+    const message = {nonce: 0, to: getState().owner, amount: getState().txAmount}
     try {
-      //FIXME: put a random message
-      web3.eth.personal.signMessagePinless("112233", "0x0000000000000000000000000000000000000000", "", function(err, sig) {
+      web3.keycard.signTypedData(message, function(err, sig) {
         if (err) {
           dispatch(web3Error(err))
         } else {
-          //FIXME: put a random message
-          const address = web3.eth.accounts.recover("0x112233", sig)
+          const address = web3.eth.accounts.recover(sig)
           dispatch(keycardDiscovered(address));
-          dispatch(findWallet(address));
+          dispatch(findWallet(address, message, sig));
         }
       })
     } catch(err) {
