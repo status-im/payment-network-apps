@@ -18,13 +18,13 @@ async function signPaymentRequest(signer, message) {
     { name: "chainId", type: "uint256" },
     { name: "verifyingContract", type: "address" }
   ];
-  
+
   let payment = [
     { name: "nonce", type: "uint256" },
     { name: "amount", type: "uint256" },
     { name: "to", type: "address" }
   ];
-  
+
   let domainData = {
     name: "KeycardWallet",
     version: "1",
@@ -143,7 +143,7 @@ contract('KeycardWallet', () => {
     // message is signed by the merchant
     const sig = await signPaymentRequest(merchant, message)
     const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
-    
+
     try {
       const estimatedGas = await requestPayment.estimateGas();
       await requestPayment.send({
@@ -278,7 +278,7 @@ contract('KeycardWallet', () => {
     } catch (err) {
       assert.equal(getErrorReason(err), "balance is not enough");
     }
-  });  
+  });
 
   it('requestPayment', async () => {
     const nonce = await KeycardWallet.methods.nonce().call();
@@ -304,13 +304,19 @@ contract('KeycardWallet', () => {
     assert.equal(pendingWithdrawal, value);
 
     const totalPendingWithdrawal = await KeycardWallet.methods.totalPendingWithdrawals().call();
-    assert.equal(totalPendingWithdrawal, value);    
+    assert.equal(totalPendingWithdrawal, value);
   });
 
   it('requestPayment with value greater than available balance', async () => {
     const nonce = await KeycardWallet.methods.nonce().call();
     const to = merchant;
     const value = 100;
+
+    const totalBalance = await web3.eth.getBalance(KeycardWallet.address);
+    assert.equal(totalBalance, value);
+
+    const totalPendingWithdrawal = await KeycardWallet.methods.totalPendingWithdrawals().call();
+    assert.equal(totalPendingWithdrawal, 10);
 
     const message = {nonce: nonce, amount: value, to: to};
     const sig = await signPaymentRequest(keycard, message)
@@ -322,12 +328,12 @@ contract('KeycardWallet', () => {
         from: merchant,
         gas: estimatedGas
       });
-     
+
       assert.fail("requestPayment should have failed");
     } catch (err) {
       assert.equal(getErrorReason(err), "balance is not enough");
     }
-  });  
+  });
 
   it('withdraw from address without pendingWithdrawal', async () => {
     const withdrawalValue = 1;
@@ -362,7 +368,7 @@ contract('KeycardWallet', () => {
     assert.equal(pendingWithdrawalAfter, 0);
 
     const totalPendingWithdrawalAfter = await KeycardWallet.methods.totalPendingWithdrawals().call();
-    assert.equal(totalPendingWithdrawalAfter, 0);  
+    assert.equal(totalPendingWithdrawalAfter, 0);
 
     const expectedMerchantBalance = (new web3.utils.BN(merchantBalanceBefore)).sub(fullTxPrice).add(new web3.utils.BN(withdrawalValue));
     const merchantBalanceAfter = await web3.eth.getBalance(merchant);
