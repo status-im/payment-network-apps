@@ -248,7 +248,7 @@ contract('KeycardWallet', () => {
     } catch (err) {
       assert.equal(getErrorReason(err), "balance is not enough");
     }
-  });  
+  });
 
   it('requestPayment', async () => {
     const nonce = await KeycardWallet.methods.nonce().call();
@@ -275,13 +275,16 @@ contract('KeycardWallet', () => {
     assert.equal(pendingWithdrawal, value);
 
     const totalPendingWithdrawal = await KeycardWallet.methods.totalPendingWithdrawals().call();
-    assert.equal(totalPendingWithdrawal, value);    
+    assert.equal(totalPendingWithdrawal, value);
   });
 
   it('requestPayment with value greater than available balance', async () => {
     const nonce = await KeycardWallet.methods.nonce().call();
     const to = merchant;
     const value = 100;
+
+    const totalBalance = await web3.eth.getBalance(KeycardWallet.address);
+    assert.equal(totalBalance, value);
 
     const message = await web3.utils.soliditySha3(nonce, to, value);
     const sig = await web3.eth.sign(message, keycard);
@@ -294,12 +297,12 @@ contract('KeycardWallet', () => {
         from: merchant,
         gas: estimatedGas
       });
-     
+
       assert.fail("requestPayment should have failed");
     } catch (err) {
       assert.equal(getErrorReason(err), "balance is not enough");
     }
-  });  
+  });
 
   it('withdraw from address without pendingWithdrawal', async () => {
     const withdrawalValue = 1;
@@ -334,7 +337,7 @@ contract('KeycardWallet', () => {
     assert.equal(pendingWithdrawalAfter, 0);
 
     const totalPendingWithdrawalAfter = await KeycardWallet.methods.totalPendingWithdrawals().call();
-    assert.equal(totalPendingWithdrawalAfter, 0);  
+    assert.equal(totalPendingWithdrawalAfter, 0);
 
     const expectedMerchantBalance = (new web3.utils.BN(merchantBalanceBefore)).sub(fullTxPrice).add(new web3.utils.BN(withdrawalValue));
     const merchantBalanceAfter = await web3.eth.getBalance(merchant);
