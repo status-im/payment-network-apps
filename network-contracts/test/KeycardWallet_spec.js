@@ -1,5 +1,50 @@
 const KeycardWallet = require('Embark/contracts/KeycardWallet');
 
+const promisifyJsonRPC = (inner) =>
+  new Promise((resolve, reject) =>
+    inner((err, res) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(res.result);
+      }
+  })
+);
+
+async function signPaymentRequest(signer, message) {
+  let domain = [
+    { name: "name", type: "string" },
+    { name: "version", type: "string" },
+    { name: "chainId", type: "uint256" },
+    { name: "verifyingContract", type: "address" }
+  ];
+  
+  let payment = [
+    { name: "nonce", type: "uint256" },
+    { name: "amount", type: "uint256" },
+    { name: "to", type: "address" }
+  ];
+  
+  let domainData = {
+    name: "KeycardWallet",
+    version: "1",
+    chainId: 1,
+    verifyingContract: KeycardWallet.address
+  };
+
+  let data = {
+    types: {
+      EIP712Domain: domain,
+      Payment: payment
+    },
+    primaryType: "Payment",
+    domain: domainData,
+    message: message
+  };
+
+  return promisifyJsonRPC(cb => web3.currentProvider.sendAsync({method: "eth_signTypedData", params: [signer, data], from: signer}, cb));
+}
+
 let owner,
   merchant;
 
@@ -34,15 +79,6 @@ contract('KeycardWallet', () => {
     });
   };
 
-  it ('recover', async () => {
-    const message = "hello world";
-    const sig = await web3.eth.sign(message, owner);
-    const prefixedHash = await web3.eth.accounts.hashMessage(message);
-
-    const contractResult = await KeycardWallet.methods.recover(prefixedHash, sig).call();
-    assert.equal(contractResult, owner, "contractResult == owner");
-  });
-
   it('add balance', async () => {
     const contractBalanceBefore = await web3.eth.getBalance(KeycardWallet.address);
     assert.equal(contractBalanceBefore, 0);
@@ -63,8 +99,7 @@ contract('KeycardWallet', () => {
   });
 
   it('requestPayment without setting a keycard address', async () => {
-    const message = await web3.utils.soliditySha3(0, "0x00", 0);
-    const requestPayment = KeycardWallet.methods.requestPayment("0x00", "0x00", 0, merchant, 0);
+    const requestPayment = KeycardWallet.methods.requestPayment({nonce: 0, amount: 0, to: merchant}, "0x00");
     try {
       const estimatedGas = await requestPayment.estimateGas();
       await requestPayment.send({
@@ -104,12 +139,11 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 10;
 
-    const message = await web3.utils.soliditySha3(nonce, to, value);
+    const message = {nonce: nonce, amount: value, to: to};
     // message is signed by the merchant
-    const sig = await web3.eth.sign(message, merchant);
-    const hashToSign = await web3.eth.accounts.hashMessage(message);
-
-    const requestPayment = KeycardWallet.methods.requestPayment(hashToSign, sig, nonce, to, value);
+    const sig = await signPaymentRequest(merchant, message)
+    const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
+    
     try {
       const estimatedGas = await requestPayment.estimateGas();
       await requestPayment.send({
@@ -133,11 +167,10 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 10;
 
-    const message = await web3.utils.soliditySha3(nonce, to, value);
-    const sig = await web3.eth.sign(message, keycard);
-    const hashToSign = await web3.eth.accounts.hashMessage(message);
+    const message = {nonce: nonce, amount: value, to: to};
+    const sig = await signPaymentRequest(keycard, message)
+    const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
 
-    const requestPayment = KeycardWallet.methods.requestPayment(hashToSign, sig, nonce, to, value);
     try {
       const estimatedGas = await requestPayment.estimateGas();
       await requestPayment.send({
@@ -158,13 +191,12 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 10;
 
-    const message = await web3.utils.soliditySha3(nonce, to, value);
-    const sig = await web3.eth.sign(message, keycard);
+    const badMessage = {nonce: nonce, amount: value + 1, to: to};
 
-    const badMessage = await web3.utils.soliditySha3(nonce, to, value + 100);
-    const hashFromBadParams = await web3.eth.accounts.hashMessage(badMessage);
+    const message = {nonce: nonce, amount: value, to: to};
+    const sig = await signPaymentRequest(keycard, message)
+    const requestPayment = KeycardWallet.methods.requestPayment(badMessage, sig);
 
-    const requestPayment = KeycardWallet.methods.requestPayment(hashFromBadParams, sig, nonce, to, value);
     try {
       const estimatedGas = await requestPayment.estimateGas();
       const receipt = await requestPayment.send({
@@ -173,7 +205,7 @@ contract('KeycardWallet', () => {
       });
       assert.fail("requestPayment should have failed");
     } catch (err) {
-      assert.equal(getErrorReason(err), "signed params are different");
+      assert.equal(getErrorReason(err), "signer is not the keycard");
     }
 
 
@@ -211,11 +243,10 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 1000;
 
-    const message = await web3.utils.soliditySha3(nonce, to, value);
-    const sig = await web3.eth.sign(message, keycard);
-    const hashToSign = await web3.eth.accounts.hashMessage(message);
+    const message = {nonce: nonce, amount: value, to: to};
+    const sig = await signPaymentRequest(keycard, message)
+    const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
 
-    const requestPayment = KeycardWallet.methods.requestPayment(hashToSign, sig, nonce, to, value);
     try {
       const estimatedGas = await requestPayment.estimateGas();
       const receipt = await requestPayment.send({
@@ -233,11 +264,10 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 101;
 
-    const message = await web3.utils.soliditySha3(nonce, to, value);
-    const sig = await web3.eth.sign(message, keycard);
-    const hashToSign = await web3.eth.accounts.hashMessage(message);
+    const message = {nonce: nonce, amount: value, to: to};
+    const sig = await signPaymentRequest(keycard, message)
+    const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
 
-    const requestPayment = KeycardWallet.methods.requestPayment(hashToSign, sig, nonce, to, value);
     try {
       const estimatedGas = await requestPayment.estimateGas();
       const receipt = await requestPayment.send({
@@ -255,11 +285,10 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 10;
 
-    const message = await web3.utils.soliditySha3(nonce, to, value);
-    const sig = await web3.eth.sign(message, keycard);
-    const hashToSign = await web3.eth.accounts.hashMessage(message);
+    const message = {nonce: nonce, amount: value, to: to};
+    const sig = await signPaymentRequest(keycard, message)
+    const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
 
-    const requestPayment = KeycardWallet.methods.requestPayment(hashToSign, sig, nonce, to, value);
     const estimatedGas = await requestPayment.estimateGas();
     const receipt = await requestPayment.send({
       from: merchant,
@@ -283,11 +312,10 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 100;
 
-    const message = await web3.utils.soliditySha3(nonce, to, value);
-    const sig = await web3.eth.sign(message, keycard);
-    const hashToSign = await web3.eth.accounts.hashMessage(message);
+    const message = {nonce: nonce, amount: value, to: to};
+    const sig = await signPaymentRequest(keycard, message)
+    const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
 
-    const requestPayment = KeycardWallet.methods.requestPayment(hashToSign, sig, nonce, to, value);
     try {
       const estimatedGas = await requestPayment.estimateGas();
       const receipt = await requestPayment.send({
