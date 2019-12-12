@@ -12,7 +12,6 @@ import CssBaseline from '@material-ui/core/CssBaseline';
 import Avatar from '@material-ui/core/Avatar';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
-import { newWalletSelectIcon } from "../actions"
 import { compressedAddress } from '../utils';
 import { Props } from '../containers/App';
 
@@ -54,7 +53,7 @@ const App = (props: Props) => {
   let body = loading;
 
   //FIXME: check if loading
-  if (props.web3Initialized) {
+  if (!props.loading) {
     body = <>
       <TopPanel />
       <TransactionsList />

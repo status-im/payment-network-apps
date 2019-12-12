@@ -4,7 +4,7 @@ import { RootState } from '../reducers';
 import { Dispatch } from 'redux';
 
 export interface StateProps {
-  web3Initialized: boolean
+  loading: boolean
   web3Error: string | undefined
   walletAddress: string | undefined
   networkID: number | undefined
@@ -16,13 +16,17 @@ export interface DispatchProps {
 
 export type Props = StateProps & DispatchProps;
 
-const mapStateToProps = (state: RootState): StateProps => ({
-  web3Initialized: state.web3.initialized,
-  web3Error: state.web3.error,
-  networkID: state.web3.networkID,
-  walletAddress: state.wallet.walletAddress,
-  walletError: state.wallet.error,
-});
+const mapStateToProps = (state: RootState): StateProps => {
+  const ready = state.web3.initialized && state.wallet.ready;
+
+  return {
+    loading: !ready,
+    web3Error: state.web3.error,
+    networkID: state.web3.networkID,
+    walletAddress: state.wallet.walletAddress,
+    walletError: state.wallet.error,
+  }
+};
 
 const mapDispatchToProps = (dispatch: Dispatch): DispatchProps => ({
 });
