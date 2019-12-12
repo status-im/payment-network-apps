@@ -26,6 +26,8 @@ const useStyles = makeStyles(theme => ({
   loading: {
     textAlign: "center",
     marginTop: 100,
+    display: "inline-block",
+    width: "100%",
   },
   main: {
     position: 'relative'
@@ -50,10 +52,12 @@ const App = (props: Props) => {
     <CircularProgress></CircularProgress>
   </div>;
 
-  let body = loading;
+  let body = <></>;
 
   //FIXME: check if loading
-  if (!props.loading) {
+  if (props.walletError === undefined && props.loading) {
+    body = loading;
+  } else if (!props.loading) {
     body = <>
       <TopPanel />
       <TransactionsList />

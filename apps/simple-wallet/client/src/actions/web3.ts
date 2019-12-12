@@ -63,9 +63,7 @@ export const initializeWeb3 = () => {
     web3.eth.net.getId().then((id) => {
       dispatch(web3NetworkIDLoaded(id))
       loadWallet(web3, dispatch, getState);
-    }).catch((err) => {
-      dispatch(web3Error(err))
-    })
+    });
   }
 }
 

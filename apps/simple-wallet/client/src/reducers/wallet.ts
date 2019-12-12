@@ -1,6 +1,7 @@
 import {
   WalletActions,
   WALLET_KEYCARD_ADDRESS_NOT_SPECIFIED,
+  WALLET_INVALID_KEYCARD_ADDRESS,
   WALLET_FACTORY_LOADING_WALLET_ADDRESS,
   WALLET_FACTORY_KEYCARD_NOT_FOUND,
   WALLET_FACTORY_WALLET_ADDRESS_LOADED,
@@ -44,6 +45,13 @@ export const walletReducer = (state: WalletState = initialState, action: WalletA
       return {
         ...state,
         error: "Keycard address not specified. Tap your keycard on your phone.",
+      }
+    }
+
+    case WALLET_INVALID_KEYCARD_ADDRESS: {
+      return {
+        ...state,
+        error: "invalid keycard address",
       }
     }
 
