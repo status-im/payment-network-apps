@@ -37,7 +37,7 @@ contract KeycardWallet {
   }
 
   modifier onlyOwner() {
-    require(msg.sender == owner, "owner required");
+    require(msg.sender == owner || msg.sender == factory, "owner required");
     _;
   }
 
@@ -64,8 +64,14 @@ contract KeycardWallet {
     lastUsedBlockNum = block.number;
   }
 
-  function setKeycard(address _keycard) public onlyOwner {
+  function setOwner(address _owner) public onlyOwner returns (bool) {
+    owner = _owner;
+    return true;
+  }
+
+  function setKeycard(address _keycard) public onlyOwner returns (bool) {
     keycard = _keycard;
+    return true;
   }
 
   function setSettings(Settings memory _settings) public onlyOwner {
