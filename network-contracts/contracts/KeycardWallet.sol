@@ -25,7 +25,6 @@ contract KeycardWallet {
 
   address public factory;
   address public owner;
-  bytes3 public name;
   address public keycard;
   Settings public settings;
   mapping(address => uint) public pendingWithdrawals;
@@ -47,7 +46,7 @@ contract KeycardWallet {
     emit TopUp(msg.sender, msg.value);
   }
 
-  constructor(bytes3 _name, address _keycard, uint256 _maxTxValue, address _factory) public {
+  constructor(address _keycard, Settings memory _settings, address _factory) public {
     DOMAIN_SEPARATOR = keccak256(abi.encode(
       EIP712DOMAIN_TYPEHASH,
       keccak256("KeycardWallet"),
@@ -57,11 +56,10 @@ contract KeycardWallet {
     ));
 
     owner = msg.sender;
-    name = _name;
     keycard = _keycard;
     factory = _factory;
-    settings.maxTxValue = _maxTxValue;
-    settings.minBlockDistance = 1;
+    settings.maxTxValue = _settings.maxTxValue;
+    settings.minBlockDistance = _settings.minBlockDistance;
     totalPendingWithdrawals = 0;
     lastUsedBlockNum = block.number;
   }
@@ -70,8 +68,9 @@ contract KeycardWallet {
     keycard = _keycard;
   }
 
-  function setSettings(uint256 _maxTxValue) public onlyOwner {
-    settings.maxTxValue = _maxTxValue;
+  function setSettings(Settings memory _settings) public onlyOwner {
+    settings.maxTxValue = _settings.maxTxValue;
+    settings.minBlockDistance = _settings.minBlockDistance;
   }
 
   function hash(Payment memory _payment) internal pure returns (bytes32) {
