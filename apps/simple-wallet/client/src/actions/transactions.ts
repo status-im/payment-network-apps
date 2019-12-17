@@ -65,7 +65,7 @@ export const watchPendingTransaction = (web3: Web3, dispatch: Dispatch, walletAd
   web3.eth.getTransactionReceipt(transactionHash).then((tx: TransactionReceipt) => {
     if (tx.status) {
       dispatch(transactionConfirmed(transactionHash));
-      if (walletAddress != undefined) {
+      if (walletAddress !== undefined) {
         loadBalance(web3, dispatch, walletAddress);
       }
       return;

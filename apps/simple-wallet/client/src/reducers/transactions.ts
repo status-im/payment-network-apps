@@ -1,5 +1,7 @@
-import Web3 from 'web3';
+import { config } from '../global';
 import {
+  TXS_LOADING,
+  TXS_LOADED,
   TXS_TRANSACTION_DISCOVERED,
   TXS_TRANSACTION_CONFIRMED,
   TxsActions,
@@ -16,7 +18,10 @@ export interface TransactionState {
 }
 
 export interface TransactionsState {
-  [txHash: string]: TransactionState
+  loading: boolean
+  transactions: {
+    [txHash: string]: TransactionState
+  }
 };
 
 const newTransactionState = (): TransactionState => ({
@@ -29,14 +34,29 @@ const newTransactionState = (): TransactionState => ({
   valueInETH: "",
 });
 
-const initialState: TransactionsState = {};
+const initialState: TransactionsState = {
+  loading: false,
+  transactions: {},
+};
 
 export const transactionsReducer = (state: TransactionsState = initialState, action: TxsActions): TransactionsState => {
   switch (action.type) {
-    case TXS_TRANSACTION_DISCOVERED: {
-      const web3: Web3 = (window as any).web3;
-      const txState: TransactionState = state[action.transactionHash] || newTransactionState();
+    case TXS_LOADING: {
+      return {
+        ...state,
+        loading: true,
+      }
+    }
 
+    case TXS_LOADED: {
+      return {
+        ...state,
+        loading: false,
+      }
+    }
+
+    case TXS_TRANSACTION_DISCOVERED: {
+      const txState: TransactionState = state.transactions[action.transactionHash] || newTransactionState();
       // if tx was is new (pending === undefined)
       // OR tx was pending
       // then set the current state
@@ -46,36 +66,40 @@ export const transactionsReducer = (state: TransactionsState = initialState, act
         txState.pending = action.pending;
       }
 
-      const valueInETH = web3.utils.fromWei(action.value);
-      const pending = txState.pending
+      const valueInETH = config.web3!.utils.fromWei(action.value);
 
       return {
         ...state,
-        [action.transactionHash]: {
-          ...txState,
-          id: action.id,
-          transactionHash: action.transactionHash,
-          pending: action.pending,
-          from: action.from,
-          to: action.to,
-          value: action.value,
-          valueInETH: valueInETH,
+        transactions: {
+          ...state.transactions,
+          [action.transactionHash]: {
+            ...txState,
+            id: action.id,
+            transactionHash: action.transactionHash,
+            pending: action.pending,
+            from: action.from,
+            to: action.to,
+            value: action.value,
+            valueInETH: valueInETH,
+          }
         }
       }
     }
 
     case TXS_TRANSACTION_CONFIRMED: {
-      const web3: Web3 = (window as any).web3;
-      const txState: TransactionState = state[action.transactionHash];
+      const txState: TransactionState = state.transactions[action.transactionHash];
       if (txState === undefined) {
         return state;
       }
 
       return {
         ...state,
-        [action.transactionHash]: {
-          ...txState,
-          pending: false,
+        transactions: {
+          ...state.transactions,
+          [action.transactionHash]: {
+            ...txState,
+            pending: false,
+          }
         }
       }
     }

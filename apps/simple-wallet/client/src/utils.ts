@@ -5,5 +5,5 @@ export const compressedAddress = (a: string, padding: number = 4) => {
 }
 
 export const isEmptyAddress = (a: string) =>
-  a == emptyAddress;
+  a === emptyAddress;
 
