@@ -1,11 +1,19 @@
 import { Dispatch } from 'redux';
 import { RootState } from '../reducers';
 import { Contract } from 'web3-eth-contract';
-import { abi as keycardWalletFactoryABI } from '../contracts/KeycardWalletFactory';
-import { abi as keycardWalletABI } from '../contracts/KeycardWallet';
 import Web3 from 'web3';
 import { TransactionReceipt } from 'web3-core';
 import { loadBalance } from './wallet';
+
+export const TXS_LOADING = "TXS_LOADING";
+export interface TxsLoadingAction {
+  type: typeof TXS_LOADING
+}
+
+export const TXS_LOADED = "TXS_LOADED";
+export interface TxsLoadedAction {
+  type: typeof TXS_LOADED
+}
 
 export const TXS_TRANSACTION_DISCOVERED = "TXS_TRANSACTION_DISCOVERED";
 export interface TxsTransactionDiscoveredAction {
@@ -25,6 +33,8 @@ export interface TxsTransactionConfirmedAction {
 }
 
 export type TxsActions =
+  TxsLoadingAction |
+  TxsLoadedAction |
   TxsTransactionDiscoveredAction |
   TxsTransactionConfirmedAction;
 
@@ -36,6 +46,14 @@ export const topUpDiscovered = (id: string, transactionHash: string, pending: bo
   from,
   to,
   value,
+});
+
+export const loadingTransactions = (): TxsLoadingAction => ({
+  type: TXS_LOADING,
+});
+
+export const transactionsLoaded = (): TxsLoadedAction => ({
+  type: TXS_LOADED,
 });
 
 export const transactionConfirmed = (transactionHash: string): TxsTransactionConfirmedAction => ({
@@ -64,6 +82,7 @@ export const loadTransactions = (web3: Web3, dispatch: Dispatch, getState: () =>
   const state = getState();
   const walletAddress = state.wallet.walletAddress;
 
+  dispatch(loadingTransactions());
   wallet.getPastEvents('TopUp', {fromBlock: 0, toBlock: 'latest'}).then((events: any) => {
     //FIXME: add loading event
     //FIXME: use the right type for event
@@ -71,6 +90,7 @@ export const loadTransactions = (web3: Web3, dispatch: Dispatch, getState: () =>
       const values = event.returnValues;
       dispatch(topUpDiscovered(event.id, event.transactionHash, false, values.from, walletAddress, values.value));
     });
+    dispatch(transactionsLoaded());
   }).catch(error => {
     //FIXME: handle error
     console.log("error", error)
