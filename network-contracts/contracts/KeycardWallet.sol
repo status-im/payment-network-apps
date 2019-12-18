@@ -58,8 +58,7 @@ contract KeycardWallet {
     owner = msg.sender;
     keycard = _keycard;
     factory = _factory;
-    settings.maxTxValue = _settings.maxTxValue;
-    settings.minBlockDistance = _settings.minBlockDistance;
+    settings = _settings;
     totalPendingWithdrawals = 0;
     lastUsedBlockNum = block.number;
   }
@@ -69,8 +68,7 @@ contract KeycardWallet {
   }
 
   function setSettings(Settings memory _settings) public onlyOwner {
-    settings.maxTxValue = _settings.maxTxValue;
-    settings.minBlockDistance = _settings.minBlockDistance;
+    settings = _settings;
   }
 
   function hash(Payment memory _payment) internal pure returns (bytes32) {
