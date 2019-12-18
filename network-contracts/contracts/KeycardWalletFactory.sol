@@ -1,4 +1,5 @@
 pragma solidity ^0.5.0;
+pragma experimental ABIEncoderV2;
 
 import './KeycardWallet.sol';
 
@@ -7,15 +8,14 @@ contract KeycardWalletFactory {
   mapping(address => address) public keycardsWallets;
 
   event NewWallet(
-    KeycardWallet wallet,
-    bytes3 name
+    KeycardWallet wallet
   );
 
-  function create(bytes3 name, address keycard, uint256 maxTxValue) public {
-    KeycardWallet wallet = new KeycardWallet(name, keycard, maxTxValue, address(this));
+  function create(address keycard, KeycardWallet.Settings memory settings) public {
+    KeycardWallet wallet = new KeycardWallet(keycard, settings, address(this));
     ownersWallets[msg.sender].push(address(wallet));
     keycardsWallets[keycard] = address(wallet);
-    emit NewWallet(wallet, name);
+    emit NewWallet(wallet);
   }
 
   function ownerWalletsCount(address owner) public view returns(uint256) {

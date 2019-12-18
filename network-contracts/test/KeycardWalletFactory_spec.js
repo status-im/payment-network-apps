@@ -1,8 +1,7 @@
 const KeycardWalletFactory = require('Embark/contracts/KeycardWalletFactory');
 const { getErrorReason } = require('./utils');
 
-let owner,
-  merchant;
+let owner;
 
 config({
   contracts: {
@@ -20,7 +19,7 @@ contract('KeycardWalletFactory', () => {
     const ownerWalletsCountBefore = await KeycardWalletFactory.methods.ownerWalletsCount(owner).call();
     assert.equal(ownerWalletsCountBefore, 0);
 
-    const create = KeycardWalletFactory.methods.create("0x010203", zeroAddress, 0);
+    const create = KeycardWalletFactory.methods.create(zeroAddress, {maxTxValue: 999, minBlockDistance: 1});
     const receipt = await create.send({
       from: owner
     });
@@ -28,7 +27,6 @@ contract('KeycardWalletFactory', () => {
     const event = receipt.events.NewWallet;
     const walletAddress = event.returnValues.wallet;
     assert.notEqual(walletAddress, zeroAddress);
-    assert.equal(event.returnValues.name, "0x010203", "name in event should be 0x01020304");
 
     const ownerWalletsCountAfter = await KeycardWalletFactory.methods.ownerWalletsCount(owner).call();
     assert.equal(ownerWalletsCountAfter, 1);

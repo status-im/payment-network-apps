@@ -53,7 +53,7 @@ let owner,
 config({
   contracts: {
     KeycardWallet: {
-      args: ["0x000000", "0x0000000000000000000000000000000000000000", 0, "0x0000000000000000000000000000000000000001"]
+      args: ["0x0000000000000000000000000000000000000000", {maxTxValue: 0, minBlockDistance: 0}, "0x0000000000000000000000000000000000000001"]
     }
   }
 }, (err, _accounts) => {
@@ -230,7 +230,7 @@ contract('KeycardWallet', () => {
   });
 
   it('setSettings needs to be called by the owner', async () => {
-    const setSettings = KeycardWallet.methods.setSettings(1);
+    const setSettings = KeycardWallet.methods.setSettings({maxTxValue: 999, minBlockDistance: 1});
     try {
       const receipt = await setSettings.send({
         from: merchant
@@ -244,14 +244,16 @@ contract('KeycardWallet', () => {
   it('setSettings called by the owner', async () => {
     const settingsBefore = await KeycardWallet.methods.settings().call();
     assert.equal(settingsBefore.maxTxValue, 0);
+    assert.equal(settingsBefore.minBlockDistance, 0);
 
-    const setSettings = KeycardWallet.methods.setSettings(999);
+    const setSettings = KeycardWallet.methods.setSettings({maxTxValue: 999, minBlockDistance: 1});
     await setSettings.send({
       from: owner
     });
 
     const currentSettings = await KeycardWallet.methods.settings().call();
     assert.equal(currentSettings.maxTxValue, 999);
+    assert.equal(currentSettings.minBlockDistance, 1);
   });
 
   it('requestPayment with value greater than maxTxValue', async () => {
@@ -345,7 +347,7 @@ contract('KeycardWallet', () => {
     }
 
     // skip a block for next test
-    const setSettings = KeycardWallet.methods.setSettings(999);
+    const setSettings = KeycardWallet.methods.setSettings({maxTxValue: 999, minBlockDistance: 1});
     await setSettings.send({from: owner});
   });
 
@@ -400,7 +402,7 @@ contract('KeycardWallet', () => {
     }
 
     // skip a block for next test
-    const setSettings = KeycardWallet.methods.setSettings(999);
+    const setSettings = KeycardWallet.methods.setSettings({maxTxValue: 999, minBlockDistance: 1});
     await setSettings.send({from: owner});
   });    
 
