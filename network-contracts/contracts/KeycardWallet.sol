@@ -3,31 +3,38 @@ pragma experimental ABIEncoderV2;
 
 contract KeycardWallet {
   event TopUp(address from, uint256 value);
-  event NewPaymentRequest(uint256 nonce, address to, uint256 value);
+  event NewPaymentRequest(uint256 blockNumber, address to, uint256 amount);
   event NewWithdrawal(address to, uint256 value);
 
+  //TODO: replace with chainid opcode
   uint256 constant chainId = 1;
 
+  // must be less than 256, because the hash of older blocks cannot be retrieved
+  uint256 constant maxTxDelayInBlocks = 10;
+
   struct Payment {
-    uint256 nonce;
+    uint256 blockNumber;
+    bytes32 blockHash;
     uint256 amount;
     address to;
   }
 
   bytes32 constant EIP712DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
-  bytes32 constant PAYMENT_TYPEHASH = keccak256("Payment(uint256 nonce,uint256 amount,address to)");
+  bytes32 constant PAYMENT_TYPEHASH = keccak256("Payment(uint256 blockNumber,bytes32 blockHash,uint256 amount,address to)");
   bytes32 DOMAIN_SEPARATOR;
 
+  address public factory;
   address public owner;
   bytes3 public name;
   address public keycard;
-  uint256 public nonce;
   Settings public settings;
   mapping(address => uint) public pendingWithdrawals;
   uint256 public totalPendingWithdrawals;
+  uint256 public lastUsedBlockNum;
 
   struct Settings {
     uint256 maxTxValue;
+    uint256 minBlockDistance;
   }
 
   modifier onlyOwner() {
@@ -40,21 +47,23 @@ contract KeycardWallet {
     emit TopUp(msg.sender, msg.value);
   }
 
-  constructor(bytes3 _name, address _keycard, uint256 _maxTxValue) public {
+  constructor(bytes3 _name, address _keycard, uint256 _maxTxValue, address _factory) public {
     DOMAIN_SEPARATOR = keccak256(abi.encode(
       EIP712DOMAIN_TYPEHASH,
       keccak256("KeycardWallet"),
       keccak256("1"),
       chainId,
-      address(this)
+      _factory
     ));
 
     owner = msg.sender;
     name = _name;
     keycard = _keycard;
+    factory = _factory;
     settings.maxTxValue = _maxTxValue;
-    nonce = 0;
+    settings.minBlockDistance = 1;
     totalPendingWithdrawals = 0;
+    lastUsedBlockNum = block.number;
   }
 
   function setKeycard(address _keycard) public onlyOwner {
@@ -68,7 +77,8 @@ contract KeycardWallet {
   function hash(Payment memory _payment) internal pure returns (bytes32) {
     return keccak256(abi.encode(
       PAYMENT_TYPEHASH,
-      _payment.nonce,
+      _payment.blockNumber,
+      _payment.blockHash,
       _payment.amount,
       _payment.to
     ));
@@ -109,8 +119,17 @@ contract KeycardWallet {
     // verify the signer
     require(verify(_payment, _signature), "signer is not the keycard");
 
-    // check that the nonce is valid
-    require(nonce == _payment.nonce, "invalid nonce");
+    // check that the block number used for signing is less than the block number
+    require(_payment.blockNumber < block.number, "transaction cannot be in the future");
+
+    // check that the block number used is not too old
+    require(_payment.blockNumber >= (block.number - maxTxDelayInBlocks), "transaction too old");
+
+    // check that the block number is not too near to the last one in which a tx has been processed
+    require(_payment.blockNumber >= (lastUsedBlockNum + settings.minBlockDistance), "cooldown period not expired yet");
+
+    // check that the blockHash is valid
+    require(_payment.blockHash == blockhash(_payment.blockNumber), "invalid block hash");
 
     // check that _payment.amount is not greater than settings.maxTxValue
     require(_payment.amount <= settings.maxTxValue, "amount not allowed");
@@ -119,14 +138,14 @@ contract KeycardWallet {
     // check that balance is enough for this payment
     require(availableBalance >= 0, "balance is not enough");
 
-    // increment nonce
-    nonce++;
+    // set new baseline block for checks
+    lastUsedBlockNum = block.number;
 
     // add pendingWithdrawal
     totalPendingWithdrawals += _payment.amount;
     pendingWithdrawals[_payment.to] += _payment.amount;
 
-    emit NewPaymentRequest(_payment.nonce, _payment.to, _payment.amount);
+    emit NewPaymentRequest(_payment.blockNumber, _payment.to, _payment.amount);
   }
 
   function withdraw() public {

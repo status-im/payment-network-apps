@@ -12,7 +12,7 @@ contract KeycardWalletFactory {
   );
 
   function create(bytes3 name, address keycard, uint256 maxTxValue) public {
-    KeycardWallet wallet = new KeycardWallet(name, keycard, maxTxValue);
+    KeycardWallet wallet = new KeycardWallet(name, keycard, maxTxValue, address(this));
     ownersWallets[msg.sender].push(address(wallet));
     keycardsWallets[keycard] = address(wallet);
     emit NewWallet(wallet, name);
