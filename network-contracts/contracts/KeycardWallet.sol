@@ -1,6 +1,8 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
+import './KeycardWalletFactory.sol';
+
 contract KeycardWallet {
   event TopUp(address from, uint256 value);
   event NewPaymentRequest(uint256 blockNumber, address to, uint256 amount);
@@ -23,7 +25,7 @@ contract KeycardWallet {
   bytes32 constant PAYMENT_TYPEHASH = keccak256("Payment(uint256 blockNumber,bytes32 blockHash,uint256 amount,address to)");
   bytes32 DOMAIN_SEPARATOR;
 
-  address public factory;
+  address public register;
   address public owner;
   address public keycard;
   Settings public settings;
@@ -37,7 +39,7 @@ contract KeycardWallet {
   }
 
   modifier onlyOwner() {
-    require(msg.sender == owner || msg.sender == factory, "owner required");
+    require(msg.sender == owner, "owner required");
     _;
   }
 
@@ -46,37 +48,59 @@ contract KeycardWallet {
     emit TopUp(msg.sender, msg.value);
   }
 
-  constructor(address _keycard, Settings memory _settings, address _factory) public {
+  constructor(address _owner, address _keycard, Settings memory _settings, address _register) public {
+    owner = _owner == address(0) ? msg.sender : _owner;
+    keycard = _keycard;
+    register = address(0);
+
+    settings = _settings;
+    _setRegister(_register);
+    totalPendingWithdrawals = 0;
+    lastUsedBlockNum = block.number;
+  }
+
+  function _setRegister(address _register) internal {
+    if (register != address(0)) {
+      KeycardWalletFactory(uint160(register)).unregister(owner, keycard);
+    }
+
+    if (_register != address(0) && msg.sender != _register) {
+      KeycardWalletFactory(uint160(_register)).register(owner, keycard);
+    }
+
+    register = _register;
+
     DOMAIN_SEPARATOR = keccak256(abi.encode(
       EIP712DOMAIN_TYPEHASH,
       keccak256("KeycardWallet"),
       keccak256("1"),
       chainId,
-      _factory
+      register
     ));
-
-    owner = msg.sender;
-    keycard = _keycard;
-    factory = _factory;
-    settings.maxTxValue = _settings.maxTxValue;
-    settings.minBlockDistance = _settings.minBlockDistance;
-    totalPendingWithdrawals = 0;
-    lastUsedBlockNum = block.number;
   }
 
-  function setOwner(address _owner) public onlyOwner returns (bool) {
+  function setRegister(address _register) public onlyOwner {
+    _setRegister(_register);
+  }
+
+  function setOwner(address _owner) public onlyOwner {
+    if (register != address(0)) {
+      KeycardWalletFactory(uint160(register)).setOwner(owner, _owner);
+    }
+
     owner = _owner;
-    return true;
   }
 
-  function setKeycard(address _keycard) public onlyOwner returns (bool) {
+  function setKeycard(address _keycard) public onlyOwner {
+    if (register != address(0)) {
+      KeycardWalletFactory(uint160(register)).setKeycard(keycard, _keycard);
+    }
+
     keycard = _keycard;
-    return true;
   }
 
   function setSettings(Settings memory _settings) public onlyOwner {
-    settings.maxTxValue = _settings.maxTxValue;
-    settings.minBlockDistance = _settings.minBlockDistance;
+    settings = _settings;
   }
 
   function hash(Payment memory _payment) internal pure returns (bytes32) {

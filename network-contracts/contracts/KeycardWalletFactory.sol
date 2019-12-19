@@ -17,32 +17,29 @@ contract KeycardWalletFactory {
     require(ownersWallets[owner] == address(0), "the owner already has a wallet");
     require(keycardsWallets[keycard] == address(0), "the keycard is already associated to a wallet");
 
-    KeycardWallet wallet = new KeycardWallet(keycard, settings, address(this));
+    KeycardWallet wallet = new KeycardWallet(owner, keycard, settings, address(this));
     ownersWallets[owner] = address(wallet);
     keycardsWallets[keycard] = address(wallet);
     emit NewWallet(wallet);
   }
 
-  function setOwner(address _owner) public {
-    address wallet = ownersWallets[msg.sender];
+  function setOwner(address _oldOwner, address _newOwner) public {
+    address wallet = ownersWallets[_oldOwner];
 
-    require(wallet != address(0), "the sender has no wallet");
-    require(ownersWallets[_owner] == address(0), "the new owner already has a wallet");
-    require(KeycardWallet(uint160(wallet)).setOwner(_owner), "wallet call failed");
+    require(wallet == msg.sender, "only the registered wallet can call this");
+    require(ownersWallets[_newOwner] == address(0), "the new owner already has a wallet");
 
-    ownersWallets[_owner] = wallet;
-    delete ownersWallets[msg.sender];
+    ownersWallets[_newOwner] = wallet;
+    delete ownersWallets[_oldOwner];
   }
 
   function setKeycard(address _oldKeycard, address _newKeycard) public {
-    address wallet = ownersWallets[msg.sender];
+    address wallet = keycardsWallets[_oldKeycard];
 
-    require(wallet != address(0), "the sender has no wallet");
+    require(wallet == msg.sender, "only the registered wallet can call this");
     require(keycardsWallets[_newKeycard] == address(0), "the keycard already has a wallet");
-    require(wallet == keycardsWallets[_oldKeycard], "only the owner can change the associated keycard");
-    require(KeycardWallet(uint160(wallet)).setKeycard(_newKeycard), "wallet call failed");
 
-    keycardsWallets[_newKeycard] = ownersWallets[msg.sender];
+    keycardsWallets[_newKeycard] = wallet;
     delete keycardsWallets[_oldKeycard];
   }
 
@@ -54,5 +51,23 @@ contract KeycardWalletFactory {
 
     delete ownersWallets[msg.sender];
     delete keycardsWallets[_keycard];
+  }
+
+  function unregister(address _owner, address _keycard) public {
+    address wallet = ownersWallets[_owner];
+
+    require(wallet == msg.sender, "only the registered wallet can call this");
+    require(wallet == keycardsWallets[_keycard], "only the associated keycard can be deassociated");
+
+    delete ownersWallets[_owner];
+    delete keycardsWallets[_keycard];
+  }
+
+  function register(address _owner, address _keycard) public {
+    require(ownersWallets[_owner] == address(0), "the sender already has a wallet");
+    require(keycardsWallets[_keycard] == address(0), "the keycard already has a wallet");
+
+    ownersWallets[_owner] = msg.sender;
+    keycardsWallets[_keycard] = msg.sender;
   }
 }
