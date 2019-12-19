@@ -1,4 +1,4 @@
-import React, { createRef, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -42,9 +42,7 @@ const ReceiveDialog = (props: Props) => {
     qr.make();
     image.current.src = qr.toDataURL(4);
 
-  }, [props.address, props.networkID, image.current]);
-
-  const open = true;
+  }, [props.address, props.networkID]);
 
   return <Dialog
           fullWidth={true}
@@ -59,7 +57,7 @@ const ReceiveDialog = (props: Props) => {
     <DialogTitle id="alert-dialog-slide-title">Top up your wallet</DialogTitle>
     <DialogContent className={classes.container}>
       <div>
-        <img className={classes.qrcode} ref={image} />
+        <img alt={props.address} className={classes.qrcode} ref={image} />
       </div>
       <div>
         <pre>

@@ -8,7 +8,6 @@ import {
   Middleware,
   MiddlewareAPI,
   Dispatch,
-  AnyAction,
 } from 'redux'
 import { initializeWeb3 } from './actions/web3';
 import { createRootReducer } from './reducers'

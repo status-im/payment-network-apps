@@ -1,6 +1,5 @@
 import React from 'react'
 import { makeStyles } from '@material-ui/core/styles';
-import PropTypes from 'prop-types'
 import TransactionInIcon from '@material-ui/icons/CallReceived';
 import { withStyles } from '@material-ui/core/styles';
 import ListItem from '@material-ui/core/ListItem';
@@ -11,7 +10,6 @@ import Divider from '@material-ui/core/Divider';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import {
   compressedAddress,
-  isEmptyAddress,
 } from '../utils';
 
 export interface Props {
@@ -30,11 +28,6 @@ const StyledListItemText = withStyles({
     overflow: "hidden",
   },
 })(ListItemText);
-
-const formattedBalance = (balance: string) => {
-  const web3 = (window as any).web3;
-  return web3.utils.fromWei(balance);
-}
 
 const useStyles = makeStyles(theme => ({
   secondaryLine: {
@@ -64,14 +57,12 @@ const TransactionsListItem = (props: Props) => {
     <span className={classes.secondaryLine}>to: {toAddress}</span>
   </span>;
 
-  const secondaryLoading = "loading..."
-
   return (
     <>
       <ListItem button>
         <ListItemAvatar>
           <Avatar className={classes.avatar}>
-            {(props.pending === true || props.pending == undefined) && <CircularProgress color="secondary" className={classes.avatarLoading}/>}
+            {(props.pending === true || props.pending === undefined) && <CircularProgress color="secondary" className={classes.avatarLoading}/>}
             <TransactionInIcon />
           </Avatar>
         </ListItemAvatar>

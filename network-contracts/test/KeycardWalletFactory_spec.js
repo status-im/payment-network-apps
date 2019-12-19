@@ -1,7 +1,7 @@
 const KeycardWalletFactory = require('Embark/contracts/KeycardWalletFactory');
 const KeycardWallet = require('Embark/contracts/KeycardWallet');
 const EmbarkJS = require('Embark/EmbarkJS');
-
+const { getErrorReason } = require('./utils');
 
 let owner, owner2;
 
@@ -14,15 +14,6 @@ config({
   owner2 = _accounts[1];
 });
 
-
-const getErrorReason = (err) => {
-  const errors = [];
-  for (hash in err.results) {
-    errors.push(err.results[hash].reason);
-  }
-
-  return errors[0];
-}
 
 contract('KeycardWalletFactory', () => {
   it ('create', async () => {

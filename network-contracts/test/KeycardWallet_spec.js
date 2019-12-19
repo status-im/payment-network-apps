@@ -1,5 +1,6 @@
 const KeycardWallet = require('Embark/contracts/KeycardWallet');
 const KeycardWalletFactory = require('Embark/contracts/KeycardWallet');
+const { getErrorReason } = require('./utils');
 
 const promisifyJsonRPC = (inner) =>
   new Promise((resolve, reject) =>
@@ -63,16 +64,6 @@ config({
   merchant = _accounts[2];
   thief = _accounts[3];
 });
-
-
-const getErrorReason = (err) => {
-  const errors = [];
-  for (hash in err.results) {
-    errors.push(err.results[hash].reason);
-  }
-
-  return errors[0];
-}
 
 contract('KeycardWallet', () => {
 

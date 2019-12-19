@@ -63,6 +63,14 @@ export const walletReducer = (state: WalletState = initialState, action: WalletA
       }
     }
 
+    case WALLET_FACTORY_KEYCARD_NOT_FOUND: {
+      return {
+        ...state,
+        loading: false,
+        error: "not wallet found for the selected Keycard address",
+      }
+    }
+
     case WALLET_FACTORY_WALLET_ADDRESS_LOADED: {
       return {
         ...state,
