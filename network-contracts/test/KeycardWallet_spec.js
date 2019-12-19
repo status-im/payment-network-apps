@@ -1,4 +1,5 @@
 const KeycardWallet = require('Embark/contracts/KeycardWallet');
+const KeycardWalletFactory = require('Embark/contracts/KeycardWallet');
 const { getErrorReason } = require('./utils');
 
 const promisifyJsonRPC = (inner) =>
@@ -31,7 +32,7 @@ async function signPaymentRequest(signer, message) {
     name: "KeycardWallet",
     version: "1",
     chainId: 1,
-    verifyingContract: "0x0000000000000000000000000000000000000001"
+    verifyingContract: KeycardWalletFactory.address
   };
 
   let data = {
@@ -53,8 +54,9 @@ let owner,
 config({
   contracts: {
     KeycardWallet: {
-      args: ["0x0000000000000000000000000000000000000000", {maxTxValue: 0, minBlockDistance: 0}, "0x0000000000000000000000000000000000000001"]
-    }
+      args: ["0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {maxTxValue: 0, minBlockDistance: 0}, "0x0000000000000000000000000000000000000000"]
+    },
+    KeycardWalletFactory: {}
   }
 }, (err, _accounts) => {
   owner = _accounts[0];
@@ -64,12 +66,13 @@ config({
 });
 
 contract('KeycardWallet', () => {
-  const setKeycard = async () => {
-    const setKeycard = KeycardWallet.methods.setKeycard(keycard);
-    await setKeycard.send({
+
+  it('registers', async () => {
+    const setRegister = KeycardWallet.methods.setRegister(KeycardWalletFactory.address);
+    await setRegister.send({
       from: owner
     });
-  };
+  });
 
   it('add balance', async () => {
     const contractBalanceBefore = await web3.eth.getBalance(KeycardWallet.address);
@@ -121,7 +124,10 @@ contract('KeycardWallet', () => {
     const keycardBefore = await KeycardWallet.methods.keycard().call();
     assert.equal(keycardBefore, "0x0000000000000000000000000000000000000000", "keycard should be empty");
 
-    await setKeycard();
+    const setKeycard = KeycardWallet.methods.setKeycard(keycard);
+    await setKeycard.send({
+      from: owner
+    });
 
     const currentKeycard = await KeycardWallet.methods.keycard().call();
     assert.equal(currentKeycard, keycard, "current keycard address is wrong");
