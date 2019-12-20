@@ -1,4 +1,4 @@
-pragma solidity >0.5.0 <0.7.0;
+pragma solidity >=0.5.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "./KeycardWallet.sol";
@@ -34,7 +34,6 @@ contract KeycardWalletFactory {
 
   function addressDelete(address[] storage _arr, uint _idx) internal {
     _arr[_idx] = _arr[_arr.length-1];
-    delete _arr[_arr.length - 1];
     _arr.length--;
   }
 
@@ -61,6 +60,10 @@ contract KeycardWalletFactory {
 
     addressDelete(ownersWallets[msg.sender], idx);
     delete keycardsWallets[_keycard];
+  }
+
+  function countWalletsForOwner() public view returns (uint) {
+    return ownersWallets[msg.sender].length;
   }
 
   function unregister(address _owner, address _keycard) public {
