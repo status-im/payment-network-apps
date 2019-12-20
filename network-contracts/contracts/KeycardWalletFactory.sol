@@ -1,10 +1,10 @@
-pragma solidity ^0.5.0;
+pragma solidity >0.5.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
-import './KeycardWallet.sol';
+import "./KeycardWallet.sol";
 
 contract KeycardWalletFactory {
-  mapping(address => address) public ownersWallets;
+  mapping(address => address[]) public ownersWallets;
   mapping(address => address) public keycardsWallets;
 
   event NewWallet(
@@ -14,23 +14,34 @@ contract KeycardWalletFactory {
   function create(address keycard, KeycardWallet.Settings memory settings, bool keycardIsOwner) public {
     address owner = keycardIsOwner ? keycard : msg.sender;
 
-    require(ownersWallets[owner] == address(0), "the owner already has a wallet");
     require(keycardsWallets[keycard] == address(0), "the keycard is already associated to a wallet");
 
     KeycardWallet wallet = new KeycardWallet(owner, keycard, settings, address(this));
-    ownersWallets[owner] = address(wallet);
+    ownersWallets[owner].push(address(wallet));
     keycardsWallets[keycard] = address(wallet);
     emit NewWallet(wallet);
   }
 
+  function addressFind(address[] storage _arr, address _a) internal view returns (uint) {
+    for (uint i = 0; i < _arr.length; i++){
+      if (_arr[i] == _a) {
+        return i;
+      }
+    }
+
+    revert("address not found");
+  }
+
+  function addressDelete(address[] storage _arr, uint _idx) internal {
+    _arr[_idx] = _arr[_arr.length-1];
+    delete _arr[_arr.length - 1];
+    _arr.length--;
+  }
+
   function setOwner(address _oldOwner, address _newOwner) public {
-    address wallet = ownersWallets[_oldOwner];
-
-    require(wallet == msg.sender, "only the registered wallet can call this");
-    require(ownersWallets[_newOwner] == address(0), "the new owner already has a wallet");
-
-    ownersWallets[_newOwner] = wallet;
-    delete ownersWallets[_oldOwner];
+    uint idx = addressFind(ownersWallets[_oldOwner], msg.sender);
+    ownersWallets[_newOwner].push(ownersWallets[_oldOwner][idx]);
+    addressDelete(ownersWallets[_oldOwner], idx);
   }
 
   function setKeycard(address _oldKeycard, address _newKeycard) public {
@@ -43,31 +54,28 @@ contract KeycardWalletFactory {
     delete keycardsWallets[_oldKeycard];
   }
 
-  function unregister(address _keycard) public {
-    address wallet = ownersWallets[msg.sender];
+  function unregisterFromOwner(address _wallet, address _keycard) public {
+    uint idx = addressFind(ownersWallets[msg.sender], _wallet);
 
-    require(wallet != address(0), "the sender has no wallet");
-    require(wallet == keycardsWallets[_keycard], "owner required");
+    require(_wallet == keycardsWallets[_keycard], "owner required");
 
-    delete ownersWallets[msg.sender];
+    addressDelete(ownersWallets[msg.sender], idx);
     delete keycardsWallets[_keycard];
   }
 
   function unregister(address _owner, address _keycard) public {
-    address wallet = ownersWallets[_owner];
+    uint idx = addressFind(ownersWallets[_owner], msg.sender);
 
-    require(wallet == msg.sender, "only the registered wallet can call this");
-    require(wallet == keycardsWallets[_keycard], "only the associated keycard can be deassociated");
+    require(ownersWallets[_owner][idx] == keycardsWallets[_keycard], "only the associated keycard can be deassociated");
 
-    delete ownersWallets[_owner];
+    addressDelete(ownersWallets[_owner], idx);
     delete keycardsWallets[_keycard];
   }
 
   function register(address _owner, address _keycard) public {
-    require(ownersWallets[_owner] == address(0), "the sender already has a wallet");
     require(keycardsWallets[_keycard] == address(0), "the keycard already has a wallet");
 
-    ownersWallets[_owner] = msg.sender;
+    ownersWallets[_owner].push(msg.sender);
     keycardsWallets[_keycard] = msg.sender;
   }
 }
