@@ -1,7 +1,7 @@
 pragma solidity >=0.5.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
-import "./KeycardWalletFactory.sol";
+import "./KeycardRegistry.sol";
 
 contract KeycardWallet {
   event TopUp(address from, uint256 value);
@@ -61,11 +61,11 @@ contract KeycardWallet {
 
   function _setRegister(address _register) internal {
     if (register != address(0)) {
-      KeycardWalletFactory(uint160(register)).unregister(owner, keycard);
+      KeycardRegistry(register).unregister(owner, keycard);
     }
 
     if (_register != address(0) && msg.sender != _register) {
-      KeycardWalletFactory(uint160(_register)).register(owner, keycard);
+      KeycardRegistry(_register).register(owner, keycard);
     }
 
     register = _register;
@@ -85,7 +85,7 @@ contract KeycardWallet {
 
   function setOwner(address _owner) public onlyOwner {
     if (register != address(0)) {
-      KeycardWalletFactory(uint160(register)).setOwner(owner, _owner);
+      KeycardRegistry(register).setOwner(owner, _owner);
     }
 
     owner = _owner;
@@ -93,7 +93,7 @@ contract KeycardWallet {
 
   function setKeycard(address _keycard) public onlyOwner {
     if (register != address(0)) {
-      KeycardWalletFactory(uint160(register)).setKeycard(keycard, _keycard);
+      KeycardRegistry(register).setKeycard(keycard, _keycard);
     }
 
     keycard = _keycard;
