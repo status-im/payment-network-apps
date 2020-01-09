@@ -2,8 +2,9 @@ pragma solidity >=0.5.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "./KeycardWallet.sol";
+import "./KeycardRegistry.sol";
 
-contract KeycardWalletFactory {
+contract KeycardWalletFactory is KeycardRegistry {
   mapping(address => address[]) public ownersWallets;
   mapping(address => address) public keycardsWallets;
 
