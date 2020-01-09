@@ -1,7 +1,7 @@
-pragma solidity ^0.5.0;
+pragma solidity >=0.5.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
-import './KeycardWalletFactory.sol';
+import "./KeycardWalletFactory.sol";
 
 contract KeycardWallet {
   event TopUp(address from, uint256 value);
