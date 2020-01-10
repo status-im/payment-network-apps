@@ -119,6 +119,7 @@ function signPaymentRequest(message, cb) {
     message: message
   };
 
+  signer = web3.eth.defaultAccount;
 
   if (web3.keycard.signTypedData) {
     web3.keycard.signTypedData(data, cb);
