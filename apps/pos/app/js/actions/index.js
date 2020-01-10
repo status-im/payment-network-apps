@@ -87,17 +87,51 @@ export const loadNetworkID = () => {
   }
 }
 
+function signPaymentRequest(message, cb) {
+  let domain = [
+    { name: "name", type: "string" },
+    { name: "version", type: "string" },
+    { name: "chainId", type: "uint256" },
+    { name: "verifyingContract", type: "address" }
+  ];
+
+  let payment = [
+    { name: "blockNumber", type: "uint256" },
+    { name: "blockHash", type: "bytes32" },
+    { name: "amount", type: "uint256" },
+    { name: "to", type: "address" }
+  ];
+
+  let domainData = {
+    name: "KeycardWallet",
+    version: "1",
+    chainId: 1,
+    verifyingContract: KeycardWalletFactory.address
+  };
+
+  let data = {
+    types: {
+      EIP712Domain: domain,
+      Payment: payment
+    },
+    primaryType: "Payment",
+    domain: domainData,
+    message: message
+  };
+
+
+  if (web3.keycard.signTypedData) {
+    web3.keycard.signTypedData(data, cb);
+  } else {
+    let signer = web3.eth.defaultAccount
+    web3.currentProvider.sendAsync({method: "eth_signTypedData", params: [signer, data], from: signer}, cb);
+  }
+}
+
+
 export const enableEthereum = () => {
   if (window.ethereum) {
     window.web3 = new Web3(ethereum);
-    //FIXME: hack
-    try {
-      // alert(statusWeb3)
-      web3.eth.personal.signMessagePinless = statusWeb3.personal.signMessagePinless;
-      // alert(web3.eth.personal.signMessagePinless)
-    } catch(err){
-      alert(err)
-    }
 
     return (dispatch) => {
       ethereum.enable()
@@ -131,7 +165,6 @@ export const loadOwner = () => {
     return web3.eth.getAccounts()
       .then((accounts) => {
         const owner = accounts[0];
-        // web3.eth.personal.signMessagePinless("hello", owner)
         dispatch(ownerLoaded(owner))
         dispatch(loadOwnerBalance(owner))
       })
@@ -246,7 +279,7 @@ export const requestPayment = () => {
     let block = await web3.eth.getBlock("latest");
     const message = {blockNumber: block.number, blockHash: block.hash, to: getState().owner, amount: getState().txAmount}
     try {
-      web3.keycard.signTypedData(message, function(err, sig) {
+      signPaymentRequest(message, function(err, sig) {
         if (err) {
           dispatch(web3Error(err))
         } else {
