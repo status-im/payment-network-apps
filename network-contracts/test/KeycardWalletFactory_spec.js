@@ -1,7 +1,9 @@
 const KeycardWalletFactory = require('Embark/contracts/KeycardWalletFactory');
+const KeycardWallet = require('Embark/contracts/KeycardWallet');
+const EmbarkJS = require('Embark/EmbarkJS');
+const { getErrorReason } = require('./utils');
 
-let owner,
-  merchant;
+let owner, owner2;
 
 config({
   contracts: {
@@ -9,36 +11,66 @@ config({
   }
 }, (err, _accounts) => {
   owner = _accounts[0];
+  owner2 = _accounts[1];
 });
 
 
-const getErrorReason = (err) => {
-  const errors = [];
-  for (hash in err.results) {
-    errors.push(err.results[hash].reason);
-  }
-
-  return errors[0];
-}
-
 contract('KeycardWalletFactory', () => {
   it ('create', async () => {
-    const zeroAddress = "0x0000000000000000000000000000000000000000";
+    const keycard = "0x0000000000000000000000000000000000000001";
 
-    const ownerWalletsCountBefore = await KeycardWalletFactory.methods.ownerWalletsCount(owner).call();
-    assert.equal(ownerWalletsCountBefore, 0);
-
-    const create = KeycardWalletFactory.methods.create("0x010203", zeroAddress, 0);
+    const create = KeycardWalletFactory.methods.create(keycard, {maxTxValue: 999, minBlockDistance: 1}, false);
     const receipt = await create.send({
       from: owner
     });
 
     const event = receipt.events.NewWallet;
     const walletAddress = event.returnValues.wallet;
-    assert.notEqual(walletAddress, zeroAddress);
-    assert.equal(event.returnValues.name, "0x010203", "name in event should be 0x01020304");
+    assert.notEqual(walletAddress, keycard);
 
-    const ownerWalletsCountAfter = await KeycardWalletFactory.methods.ownerWalletsCount(owner).call();
-    assert.equal(ownerWalletsCountAfter, 1);
+    assert.equal(await KeycardWalletFactory.methods.ownersWallets(owner, 0).call(), walletAddress);
+    assert.equal(await KeycardWalletFactory.methods.keycardsWallets(keycard).call(), walletAddress);
   });
+
+  it ('create (keycard is owner)', async () => {
+    const keycard = "0x0000000000000000000000000000000000000002";
+
+    const create = KeycardWalletFactory.methods.create(keycard, {maxTxValue: 999, minBlockDistance: 1}, true);
+    const receipt = await create.send({
+      from: owner
+    });
+
+    const event = receipt.events.NewWallet;
+    const walletAddress = event.returnValues.wallet;
+    assert.notEqual(walletAddress, keycard);
+
+    assert.equal(await KeycardWalletFactory.methods.ownersWallets(keycard, 0).call(), walletAddress);
+    assert.equal(await KeycardWalletFactory.methods.keycardsWallets(keycard).call(), walletAddress);
+  });
+
+  it ('create fails if keycard already has a wallet', async () => {
+    const keycard = "0x0000000000000000000000000000000000000002";
+
+    try {
+      const create = KeycardWalletFactory.methods.create(keycard, {maxTxValue: 999, minBlockDistance: 1}, false);
+      const receipt = await create.send({
+        from: owner2
+      });
+    
+      assert.fail("should have failed")
+    } catch (err) {
+      assert.equal(getErrorReason(err), "the keycard is already associated to a wallet");
+    }
+  });
+  
+  it ('unregisterFromOwner', async () => {
+    const walletAddress = await KeycardWalletFactory.methods.ownersWallets(owner, 0).call();
+    const unregisterFromOwner = KeycardWalletFactory.methods.unregisterFromOwner(walletAddress, "0x0000000000000000000000000000000000000001");
+    const receipt = await unregisterFromOwner.send({
+      from: owner
+    });
+
+    assert.equal(await KeycardWalletFactory.methods.countWalletsForOwner().call(), 0);
+    assert.equal(await KeycardWalletFactory.methods.keycardsWallets("0x0000000000000000000000000000000000000001").call(), "0x0000000000000000000000000000000000000000");
+  });  
 });

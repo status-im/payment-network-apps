@@ -9,7 +9,6 @@ import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import CssBaseline from '@material-ui/core/CssBaseline';
-import Avatar from '@material-ui/core/Avatar';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
 import { compressedAddress } from '../utils';
@@ -26,6 +25,8 @@ const useStyles = makeStyles(theme => ({
   loading: {
     textAlign: "center",
     marginTop: 100,
+    display: "inline-block",
+    width: "100%",
   },
   main: {
     position: 'relative'
@@ -41,19 +42,30 @@ const useStyles = makeStyles(theme => ({
     padding: "8px 0",
     fontWeight: "bold",
   },
+  progress: {
+    color: "rgb(14, 28, 54)",
+  },
 }));
 
 const App = (props: Props) => {
   const classes = useStyles();
 
   const loading = <div className={classes.loading}>
-    <CircularProgress></CircularProgress>
+    <CircularProgress disableShrink className={classes.progress}></CircularProgress>
   </div>;
 
-  let body = loading;
+  let body = <></>;
+
+  if (props.web3Error !== undefined) {
+    return <div className={classes.error}>
+      {props.web3Error}
+    </div>;
+  }
 
   //FIXME: check if loading
-  if (!props.loading) {
+  if (props.walletError === undefined && props.loading) {
+    body = loading;
+  } else if (!props.loading) {
     body = <>
       <TopPanel />
       <TransactionsList />

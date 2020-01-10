@@ -15,6 +15,11 @@ export interface WalletKeycardAddressNotSpecifiedAction {
   type: typeof WALLET_KEYCARD_ADDRESS_NOT_SPECIFIED
 }
 
+export const WALLET_INVALID_KEYCARD_ADDRESS = "WALLET_INVALID_KEYCARD_ADDRESS";
+export interface WalletInvalidKeycardAddressAction {
+  type: typeof WALLET_INVALID_KEYCARD_ADDRESS
+}
+
 export const WALLET_FACTORY_LOADING_WALLET_ADDRESS = "WALLET_FACTORY_LOADING_WALLET_ADDRESS";
 export interface WalletFactoryLoadingWalletAddressAction {
   type: typeof WALLET_FACTORY_LOADING_WALLET_ADDRESS
@@ -54,6 +59,7 @@ export interface WalletToggleQRCodeAction {
 
 export type WalletActions =
   WalletKeycardAddressNotSpecifiedAction |
+  WalletInvalidKeycardAddressAction |
   WalletFactoryLoadingWalletAddressAction |
   WalletFactoryWalletAddressLoadedAction |
   WalletFactoryKeycardNotFoundAction |
@@ -63,6 +69,10 @@ export type WalletActions =
 
 export const keycardAddressNotSpecified = (): WalletKeycardAddressNotSpecifiedAction => ({
   type: WALLET_KEYCARD_ADDRESS_NOT_SPECIFIED,
+});
+
+export const invalidKeycardAddress = (): WalletInvalidKeycardAddressAction => ({
+  type: WALLET_INVALID_KEYCARD_ADDRESS,
 });
 
 export const loadingWalletAddress = (keycardAddress: string): WalletFactoryLoadingWalletAddressAction => ({
@@ -104,13 +114,20 @@ export const hideWalletQRCode = (): WalletToggleQRCodeAction => ({
 export const loadWallet = (web3: Web3, dispatch: Dispatch, getState: () => RootState) => {
   const params = new URLSearchParams(window.location.search);
   const keycardAddress = params.get("address");
+
   if (keycardAddress === null) {
     dispatch(keycardAddressNotSpecified());
     return
   }
 
+  if (!web3.utils.isAddress(keycardAddress)) {
+    dispatch(invalidKeycardAddress());
+    return;
+  }
+
   dispatch(loadingWalletAddress(keycardAddress));
   const factory = new web3.eth.Contract(keycardWalletFactoryABI, walletFactoryAddress);
+
   factory.methods.keycardsWallets(keycardAddress).call().then((walletAddress: string) => {
     if (isEmptyAddress(walletAddress)) {
       dispatch(keycardNotFound(keycardAddress));
@@ -122,7 +139,6 @@ export const loadWallet = (web3: Web3, dispatch: Dispatch, getState: () => RootS
 
     const wallet = new web3.eth.Contract(keycardWalletABI, walletAddress);
     loadTransactions(web3, dispatch, getState, wallet);
-  }).then((balance: string) => {
   }).catch((error: string) => {
     //FIXME: manage error
     console.log("error", error)

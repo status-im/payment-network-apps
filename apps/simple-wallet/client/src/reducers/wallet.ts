@@ -1,6 +1,7 @@
 import {
   WalletActions,
   WALLET_KEYCARD_ADDRESS_NOT_SPECIFIED,
+  WALLET_INVALID_KEYCARD_ADDRESS,
   WALLET_FACTORY_LOADING_WALLET_ADDRESS,
   WALLET_FACTORY_KEYCARD_NOT_FOUND,
   WALLET_FACTORY_WALLET_ADDRESS_LOADED,
@@ -47,11 +48,26 @@ export const walletReducer = (state: WalletState = initialState, action: WalletA
       }
     }
 
+    case WALLET_INVALID_KEYCARD_ADDRESS: {
+      return {
+        ...state,
+        error: "invalid keycard address",
+      }
+    }
+
     case WALLET_FACTORY_LOADING_WALLET_ADDRESS: {
       return {
         ...state,
         loading: true,
         keycardAddress: action.keycardAddress,
+      }
+    }
+
+    case WALLET_FACTORY_KEYCARD_NOT_FOUND: {
+      return {
+        ...state,
+        loading: false,
+        error: "not wallet found for the selected Keycard address",
       }
     }
 
