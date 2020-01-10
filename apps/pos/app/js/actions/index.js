@@ -170,7 +170,7 @@ export const sendPaymentRequest = (walletContract, message, sig) => {
 
     try {
       dispatch(requestingPayment())
-      const requestPayment = walletContract.methods.requestPayment(message, sig);
+      const requestPayment = await walletContract.methods.requestPayment(message, sig);
       const estimatedGas = await requestPayment.estimateGas();
       const receipt = await requestPayment.send({
         gas: estimatedGas
@@ -242,8 +242,9 @@ export const findWallet = (keycardAddress, message, sig) => {
 }
 
 export const requestPayment = () => {
-  return (dispatch, getState) => {
-    const message = {nonce: 0, to: getState().owner, amount: getState().txAmount}
+  return async (dispatch, getState) => {
+    let block = await web3.eth.getBlock("latest");
+    const message = {blockNumber: block.number, blockHash: block.hash, to: getState().owner, amount: getState().txAmount}
     try {
       web3.keycard.signTypedData(message, function(err, sig) {
         if (err) {
