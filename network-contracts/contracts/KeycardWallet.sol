@@ -2,10 +2,11 @@ pragma solidity >=0.5.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "./KeycardRegistry.sol";
+import "./IERC20.sol";
 
 contract KeycardWallet {
   event TopUp(address from, uint256 value);
-  event NewPaymentRequest(uint256 blockNumber, address to, uint256 amount);
+  event NewPaymentRequest(uint256 blockNumber, address to, address currency, uint256 amount);
   event NewWithdrawal(address to, uint256 value);
 
   //TODO: replace with chainid opcode
@@ -17,12 +18,13 @@ contract KeycardWallet {
   struct Payment {
     uint256 blockNumber;
     bytes32 blockHash;
+    address currency;
     uint256 amount;
     address to;
   }
 
   bytes32 constant EIP712DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
-  bytes32 constant PAYMENT_TYPEHASH = keccak256("Payment(uint256 blockNumber,bytes32 blockHash,uint256 amount,address to)");
+  bytes32 constant PAYMENT_TYPEHASH = keccak256("Payment(uint256 blockNumber,bytes32 blockHash,address currency,uint256 amount,address to)");
   bytes32 DOMAIN_SEPARATOR;
 
   address public register;
@@ -108,6 +110,7 @@ contract KeycardWallet {
       PAYMENT_TYPEHASH,
       _payment.blockNumber,
       _payment.blockHash,
+      _payment.currency,
       _payment.amount,
       _payment.to
     ));
@@ -160,21 +163,27 @@ contract KeycardWallet {
     // check that the blockHash is valid
     require(_payment.blockHash == blockhash(_payment.blockNumber), "invalid block hash");
 
-    // check that _payment.amount is not greater than settings.maxTxValue
-    require(_payment.amount <= settings.maxTxValue, "amount not allowed");
+    // ETH transfer
+    if (_payment.currency == address(0)) {
+      // check that _payment.amount is not greater than settings.maxTxValue
+      require(_payment.amount <= settings.maxTxValue, "amount not allowed");
 
-    int256 availableBalance = int256(address(this).balance - totalPendingWithdrawals - _payment.amount);
-    // check that balance is enough for this payment
-    require(availableBalance >= 0, "balance is not enough");
+      int256 availableBalance = int256(address(this).balance - totalPendingWithdrawals - _payment.amount);
+      // check that balance is enough for this payment
+      require(availableBalance >= 0, "balance is not enough");
+
+      // add pendingWithdrawal
+      totalPendingWithdrawals += _payment.amount;
+      pendingWithdrawals[_payment.to] += _payment.amount;
+    } else {
+      //ERC20
+      require(IERC20(_payment.currency).balanceOf(address(this)) >= _payment.amount, "balance is not enough");
+      require(IERC20(_payment.currency).transfer(_payment.to, _payment.amount), "transfer failed");
+    }
 
     // set new baseline block for checks
     lastUsedBlockNum = block.number;
-
-    // add pendingWithdrawal
-    totalPendingWithdrawals += _payment.amount;
-    pendingWithdrawals[_payment.to] += _payment.amount;
-
-    emit NewPaymentRequest(_payment.blockNumber, _payment.to, _payment.amount);
+    emit NewPaymentRequest(_payment.blockNumber, _payment.to, _payment.currency, _payment.amount);
   }
 
   function withdraw() public {

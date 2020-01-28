@@ -2,6 +2,8 @@ const KeycardWallet = require('Embark/contracts/KeycardWallet');
 const KeycardWalletFactory = require('Embark/contracts/KeycardWallet');
 const { getErrorReason } = require('./utils');
 
+const zeroAddress = "0x0000000000000000000000000000000000000000";
+
 const promisifyJsonRPC = (inner) =>
   new Promise((resolve, reject) =>
     inner((err, res) => {
@@ -24,6 +26,7 @@ async function signPaymentRequest(signer, message) {
   let payment = [
     { name: "blockNumber", type: "uint256" },
     { name: "blockHash", type: "bytes32" },
+    { name: "currency", type: "address" },
     { name: "amount", type: "uint256" },
     { name: "to", type: "address" }
   ];
@@ -54,7 +57,7 @@ let owner,
 config({
   contracts: {
     KeycardWallet: {
-      args: ["0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {maxTxValue: 0, minBlockDistance: 0}, "0x0000000000000000000000000000000000000000"]
+      args: [zeroAddress, zeroAddress, {maxTxValue: 0, minBlockDistance: 0}, zeroAddress]
     },
     KeycardWalletFactory: {}
   }
@@ -95,7 +98,7 @@ contract('KeycardWallet', () => {
 
   it('requestPayment without setting a keycard address', async () => {
     const block = await web3.eth.getBlock("latest");
-    const requestPayment = KeycardWallet.methods.requestPayment({blockNumber: block.number, blockHash: block.hash, amount: 0, to: merchant}, "0x00");
+    const requestPayment = KeycardWallet.methods.requestPayment({blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: 0, to: merchant}, "0x00");
     try {
       const estimatedGas = await requestPayment.estimateGas();
       await requestPayment.send({
@@ -122,7 +125,7 @@ contract('KeycardWallet', () => {
 
   it('setKeycard called by the owner', async () => {
     const keycardBefore = await KeycardWallet.methods.keycard().call();
-    assert.equal(keycardBefore, "0x0000000000000000000000000000000000000000", "keycard should be empty");
+    assert.equal(keycardBefore, zeroAddress, "keycard should be empty");
 
     const setKeycard = KeycardWallet.methods.setKeycard(keycard);
     await setKeycard.send({
@@ -138,7 +141,7 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 10;
 
-    const message = {blockNumber: block.number, blockHash: block.hash, amount: value, to: to};
+    const message = {blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: value, to: to};
     // message is signed by the merchant
     const sig = await signPaymentRequest(merchant, message)
     const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
@@ -164,7 +167,7 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 10;
 
-    const message = {blockNumber: block.number + 1, blockHash: "0x0000000000000000000000000000000000000000000000000000000000000000", amount: value, to: to};
+    const message = {blockNumber: block.number + 1, blockHash: "0x0000000000000000000000000000000000000000000000000000000000000000", currency: zeroAddress, amount: value, to: to};
     const sig = await signPaymentRequest(keycard, message)
     const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
 
@@ -189,7 +192,7 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 10;
 
-    const message = {blockNumber: block.number, blockHash: "0x0000000000000000000000000000000000000000000000000000000000000000", amount: value, to: to};
+    const message = {blockNumber: block.number, blockHash: "0x0000000000000000000000000000000000000000000000000000000000000000", currency: zeroAddress, amount: value, to: to};
     const sig = await signPaymentRequest(keycard, message)
     const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
 
@@ -213,9 +216,9 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 10;
 
-    const badMessage = {blockNumber: block.number, blockHash: block.hash, amount: value + 1, to: to};
+    const badMessage = {blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: value + 1, to: to};
 
-    const message = {blockNumber: block.number, blockHash: block.hash, amount: value, to: to};
+    const message = {blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: value, to: to};
     const sig = await signPaymentRequest(keycard, message)
     const requestPayment = KeycardWallet.methods.requestPayment(badMessage, sig);
 
@@ -267,7 +270,7 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 1000;
 
-    const message = {blockNumber: block.number, blockHash: block.hash, amount: value, to: to};
+    const message = {blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: value, to: to};
     const sig = await signPaymentRequest(keycard, message)
     const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
 
@@ -288,7 +291,7 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 101;
 
-    const message = {blockNumber: block.number, blockHash: block.hash, amount: value, to: to};
+    const message = {blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: value, to: to};
     const sig = await signPaymentRequest(keycard, message)
     const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
 
@@ -309,7 +312,7 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 10;
 
-    const message = {blockNumber: block.number, blockHash: block.hash, amount: value, to: to};
+    const message = {blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: value, to: to};
     const sig = await signPaymentRequest(keycard, message)
     const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
 
@@ -336,7 +339,7 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 1;
 
-    const message = {blockNumber: block.number, blockHash: block.hash, amount: value, to: to};
+    const message = {blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: value, to: to};
     const sig = await signPaymentRequest(keycard, message)
     const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
 
@@ -368,7 +371,7 @@ contract('KeycardWallet', () => {
     const totalPendingWithdrawal = await KeycardWallet.methods.totalPendingWithdrawals().call();
     assert.equal(totalPendingWithdrawal, 10);
 
-    const message = {blockNumber: block.number, blockHash: block.hash, amount: value, to: to};
+    const message = {blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: value, to: to};
     const sig = await signPaymentRequest(keycard, message)
     const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
 
@@ -391,7 +394,7 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 1;
 
-    const message = {blockNumber: block.number, blockHash: block.hash, amount: value, to: to};
+    const message = {blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: value, to: to};
     const sig = await signPaymentRequest(keycard, message)
     const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
 
