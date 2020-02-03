@@ -19,7 +19,7 @@ contract('KeycardWalletFactory', () => {
   it ('create', async () => {
     const keycard = "0x0000000000000000000000000000000000000001";
 
-    const create = KeycardWalletFactory.methods.create(keycard, {maxTxValue: 999, minBlockDistance: 1}, false);
+    const create = KeycardWalletFactory.methods.create(keycard, {maxTxValue: 999, minBlockDistance: 1}, false, "0x0000000000000000000000000000000000000000", 0);
     const receipt = await create.send({
       from: owner
     });
@@ -35,7 +35,7 @@ contract('KeycardWalletFactory', () => {
   it ('create (keycard is owner)', async () => {
     const keycard = "0x0000000000000000000000000000000000000002";
 
-    const create = KeycardWalletFactory.methods.create(keycard, {maxTxValue: 999, minBlockDistance: 1}, true);
+    const create = KeycardWalletFactory.methods.create(keycard, {maxTxValue: 999, minBlockDistance: 1}, true, "0x0000000000000000000000000000000000000000", 0);
     const receipt = await create.send({
       from: owner
     });
@@ -52,7 +52,7 @@ contract('KeycardWalletFactory', () => {
     const keycard = "0x0000000000000000000000000000000000000002";
 
     try {
-      const create = KeycardWalletFactory.methods.create(keycard, {maxTxValue: 999, minBlockDistance: 1}, false);
+      const create = KeycardWalletFactory.methods.create(keycard, {maxTxValue: 999, minBlockDistance: 1}, false, "0x0000000000000000000000000000000000000000", 0);
       const receipt = await create.send({
         from: owner2
       });

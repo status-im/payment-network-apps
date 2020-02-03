@@ -12,12 +12,13 @@ contract KeycardWalletFactory is KeycardRegistry {
     KeycardWallet wallet
   );
 
-  function create(address keycard, KeycardWallet.Settings memory settings, bool keycardIsOwner) public {
+  function create(address keycard, KeycardWallet.Settings memory settings, bool keycardIsOwner,
+      address optToken, uint256 optTokenMaxTxAmount) public {
     address owner = keycardIsOwner ? keycard : msg.sender;
 
     require(keycardsWallets[keycard] == address(0), "the keycard is already associated to a wallet");
 
-    KeycardWallet wallet = new KeycardWallet(owner, keycard, settings, address(this));
+    KeycardWallet wallet = new KeycardWallet(owner, keycard, settings, address(this), optToken, optTokenMaxTxAmount);
     ownersWallets[owner].push(address(wallet));
     keycardsWallets[keycard] = address(wallet);
     emit NewWallet(wallet);

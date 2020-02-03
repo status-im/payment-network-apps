@@ -57,7 +57,7 @@ let owner,
 config({
   contracts: {
     KeycardWallet: {
-      args: [zeroAddress, zeroAddress, {maxTxValue: 0, minBlockDistance: 0}, zeroAddress]
+      args: [zeroAddress, zeroAddress, {maxTxValue: 0, minBlockDistance: 0}, zeroAddress, zeroAddress, 0]
     },
     KeycardWalletFactory: {}
   }
@@ -263,6 +263,41 @@ contract('KeycardWallet', () => {
     const currentSettings = await KeycardWallet.methods.settings().call();
     assert.equal(currentSettings.maxTxValue, 999);
     assert.equal(currentSettings.minBlockDistance, 1);
+  });
+
+  it('requestPayment with token not in the whitelist', async () => {
+    const block = await web3.eth.getBlock("latest");
+    const to = merchant;
+    const value = 1;
+    const token = "0x0000000000000000000000000000000000000001";
+
+    const message = {blockNumber: block.number, blockHash: block.hash, currency: token, amount: value, to: to};
+    const sig = await signPaymentRequest(keycard, message)
+    const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
+
+    try {
+      const estimatedGas = await requestPayment.estimateGas();
+      const receipt = await requestPayment.send({
+        from: merchant,
+        gas: estimatedGas
+      });
+     assert.fail("requestPayment should have failed");
+    } catch (err) {
+      assert.equal(getErrorReason(err), "amount not allowed");
+    }
+  });
+
+  it('add token to whitelist', async () => {
+    const maxTxValue = 1000;
+    const token = "0x0000000000000000000000000000000000000001";
+
+    const setTokenMaxTXAmount = KeycardWallet.methods.setTokenMaxTXAmount(token, maxTxValue);
+    await setTokenMaxTXAmount.send({
+      from: owner
+    });
+
+    const tokenMaxTxAmount = await KeycardWallet.methods.tokenMaxTxAmount(token).call();
+    assert.equal(tokenMaxTxAmount, maxTxValue);
   });
 
   it('requestPayment with value greater than maxTxValue', async () => {

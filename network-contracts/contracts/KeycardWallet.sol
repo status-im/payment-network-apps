@@ -31,6 +31,7 @@ contract KeycardWallet {
   address public owner;
   address public keycard;
   Settings public settings;
+  mapping(address => uint) public tokenMaxTxAmount;
   mapping(address => uint) public pendingWithdrawals;
   uint256 public totalPendingWithdrawals;
   uint256 public lastUsedBlockNum;
@@ -50,7 +51,8 @@ contract KeycardWallet {
     emit TopUp(msg.sender, msg.value);
   }
 
-  constructor(address _owner, address _keycard, Settings memory _settings, address _register) public {
+  constructor(address _owner, address _keycard, Settings memory _settings, address _register,
+      address _optToken, uint256 _optTokenMaxTxAmount) public {
     owner = _owner == address(0) ? msg.sender : _owner;
     keycard = _keycard;
     register = address(0);
@@ -59,6 +61,10 @@ contract KeycardWallet {
     _setRegister(_register);
     totalPendingWithdrawals = 0;
     lastUsedBlockNum = block.number;
+
+    if (_optToken != address(0)) {
+      setTokenMaxTXAmount(_optToken, _optTokenMaxTxAmount);
+    }
   }
 
   function _setRegister(address _register) internal {
@@ -103,6 +109,10 @@ contract KeycardWallet {
 
   function setSettings(Settings memory _settings) public onlyOwner {
     settings = _settings;
+  }
+
+  function setTokenMaxTXAmount(address _token, uint256 _maxTxAmount) public onlyOwner {
+    tokenMaxTxAmount[_token] = _maxTxAmount;
   }
 
   function hash(Payment memory _payment) internal pure returns (bytes32) {
@@ -163,8 +173,9 @@ contract KeycardWallet {
     // check that the blockHash is valid
     require(_payment.blockHash == blockhash(_payment.blockNumber), "invalid block hash");
 
-    // ETH transfer
     if (_payment.currency == address(0)) {
+      // ETH transfer
+
       // check that _payment.amount is not greater than settings.maxTxValue
       require(_payment.amount <= settings.maxTxValue, "amount not allowed");
 
@@ -177,7 +188,14 @@ contract KeycardWallet {
       pendingWithdrawals[_payment.to] += _payment.amount;
     } else {
       //ERC20
+
+      // check that _payment.amount is not greater than settings.maxTxValue
+      require(_payment.amount <= tokenMaxTxAmount[_payment.currency], "amount not allowed");
+
+      // check that balance is enough for this payment
       require(IERC20(_payment.currency).balanceOf(address(this)) >= _payment.amount, "balance is not enough");
+
+      // transfer token
       require(IERC20(_payment.currency).transfer(_payment.to, _payment.amount), "transfer failed");
     }
 
