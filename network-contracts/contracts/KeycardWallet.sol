@@ -7,7 +7,7 @@ import "./IERC20.sol";
 contract KeycardWallet {
   event TopUp(address from, uint256 value);
   event NewPaymentRequest(uint256 blockNumber, address to, address currency, uint256 amount);
-  event NewWithdrawal(address to, uint256 value);
+  event NewWithdrawal(address to, address currency, uint256 value);
 
   //TODO: replace with chainid opcode
   uint256 constant chainId = 1;
@@ -31,8 +31,8 @@ contract KeycardWallet {
   address public owner;
   address public keycard;
   Settings public settings;
-  mapping(address => uint) public pendingWithdrawals;
-  uint256 public totalPendingWithdrawals;
+  mapping(address => mapping(address => uint256)) public pendingWithdrawals;
+  mapping(address => uint256) public totalPendingWithdrawals;
   uint256 public lastUsedBlockNum;
 
   struct Settings {
@@ -163,37 +163,35 @@ contract KeycardWallet {
     // check that the blockHash is valid
     require(_payment.blockHash == blockhash(_payment.blockNumber), "invalid block hash");
 
-    // ETH transfer
-    if (_payment.currency == address(0)) {
-      // check that _payment.amount is not greater than settings.maxTxValue
-      require(_payment.amount <= settings.maxTxValue, "amount not allowed");
+    // check that _payment.amount is not greater than settings.maxTxValue
+    require(_payment.amount <= settings.maxTxValue, "amount not allowed");
 
-      int256 availableBalance = int256(address(this).balance - totalPendingWithdrawals - _payment.amount);
-      // check that balance is enough for this payment
-      require(availableBalance >= 0, "balance is not enough");
+    int256 availableBalance = int256((_payment.currency == address(0) ? address(this).balance : IERC20(_payment.currency).balanceOf(address(this))) - totalPendingWithdrawals[_payment.currency] - _payment.amount);
+    
+    // check that balance is enough for this payment
+    require(availableBalance >= 0, "balance is not enough");
 
-      // add pendingWithdrawal
-      totalPendingWithdrawals += _payment.amount;
-      pendingWithdrawals[_payment.to] += _payment.amount;
-    } else {
-      //ERC20
-      require(IERC20(_payment.currency).balanceOf(address(this)) >= _payment.amount, "balance is not enough");
-      require(IERC20(_payment.currency).transfer(_payment.to, _payment.amount), "transfer failed");
-    }
+    // add pendingWithdrawal
+    totalPendingWithdrawals[_payment.currency] += _payment.amount;
+    pendingWithdrawals[_payment.currency][_payment.to] += _payment.amount;
 
     // set new baseline block for checks
     lastUsedBlockNum = block.number;
     emit NewPaymentRequest(_payment.blockNumber, _payment.to, _payment.currency, _payment.amount);
   }
 
-  function withdraw() public {
-    uint256 amount = pendingWithdrawals[msg.sender];
+  function withdraw(address _currency) public {
+    uint256 amount = pendingWithdrawals[_currency][msg.sender];
     require(amount > 0, "no pending withdrawal");
 
-    pendingWithdrawals[msg.sender] = 0;
-    totalPendingWithdrawals -= amount;
+    delete pendingWithdrawals[_currency][msg.sender];
+    totalPendingWithdrawals[_currency] -= amount;
 
-    msg.sender.transfer(amount);
-    emit NewWithdrawal(msg.sender, amount);
+    if(_currency == address(0)){
+        msg.sender.transfer(amount);
+    }else{
+        IERC20(_currency).transfer(msg.sender, amount);
+    }
+    emit NewWithdrawal(msg.sender, _currency, amount);
   }
 }
