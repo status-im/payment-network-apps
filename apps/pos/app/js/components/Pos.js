@@ -18,7 +18,7 @@ export const compressedAddress = (a, padding) => {
 
 const formattedBalance = (balance) => {
   if (balance) {
-    return web3.utils.fromWei(balance);
+    return web3.utils.fromWei(new web3.utils.BN(balance));
   }
 
   return "";
@@ -63,7 +63,6 @@ const Pos = ({requestingPayment, paymentRequested, onTapRequest, customerKeycard
 
           {customerWallet && <p>
             <strong>Wallet</strong><br />
-            Nonce: {customerWallet.nonce} <br />
             Balance: {formattedBalance(customerWallet.balance)} <br />
             Max Tx Value: {formattedBalance(customerWallet.maxTxValue)} <br />
           </p>}

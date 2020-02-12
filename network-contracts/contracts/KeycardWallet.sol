@@ -9,7 +9,10 @@ contract KeycardWallet {
   event NewWithdrawal(address to, uint256 value);
 
   //TODO: replace with chainid opcode
-  uint256 constant chainId = 1;
+  // uint256 constant chainId = 1;
+  uint256 constant chainId = 3;
+  // uint256 constant chainId = 5;
+  // uint256 constant chainId = 1337;
 
   // must be less than 256, because the hash of older blocks cannot be retrieved
   uint256 constant maxTxDelayInBlocks = 10;
@@ -175,6 +178,10 @@ contract KeycardWallet {
     pendingWithdrawals[_payment.to] += _payment.amount;
 
     emit NewPaymentRequest(_payment.blockNumber, _payment.to, _payment.amount);
+  }
+
+  function availableBalance() public returns (int256) {
+    return int256(address(this).balance - totalPendingWithdrawals);
   }
 
   function withdraw() public {

@@ -63,8 +63,8 @@ contract KeycardWalletFactory is KeycardRegistry {
     delete keycardsWallets[_keycard];
   }
 
-  function countWalletsForOwner() public view returns (uint) {
-    return ownersWallets[msg.sender].length;
+  function countWalletsForOwner(address owner) public view returns (uint) {
+    return ownersWallets[owner].length;
   }
 
   function unregister(address _owner, address _keycard) public {
