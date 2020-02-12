@@ -101,6 +101,7 @@ function signPaymentRequest(getState, message, cb) {
   let payment = [
     { name: "blockNumber", type: "uint256" },
     { name: "blockHash", type: "bytes32" },
+    { name: "currency", type: "address" },
     { name: "amount", type: "uint256" },
     { name: "to", type: "address" }
   ];
@@ -287,6 +288,7 @@ export const requestPayment = () => {
     const message = {
       blockNumber: block.number,
       blockHash: block.hash,
+      currency: "0x0000000000000000000000000000000000000000",
       to: state.owner,
       amount: state.txAmount,
     }
