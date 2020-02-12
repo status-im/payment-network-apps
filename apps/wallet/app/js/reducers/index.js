@@ -31,12 +31,12 @@ import {
 
 const newWalletFormInitialState = {
   open: false,
-  icon: null,
   creating: false,
   error: null,
   keycardAddress: null,
   index: null,
   balance: null,
+  availableBalance: null,
   toppingUp: false,
   maxTxValue: "0.1",
 }
@@ -129,7 +129,8 @@ export default function(state, action) {
         keycardAddress: action.keycardAddress,
         name: action.name,
         balance: action.balance,
-        icon: action.icon,
+        availableBalance: action.availableBalance,
+        icon: "X",
         index: action.index,
         maxTxValue: action.maxTxValue,
       }
@@ -184,7 +185,7 @@ export default function(state, action) {
         keycardAddress: "",
         name: "",
         balance: 0,
-        icon: action.icon
+        icon: "X"
       }
 
       return Object.assign({}, state, {

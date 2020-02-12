@@ -14,10 +14,30 @@ install();
 
 import App from './containers/App';
 
+const logger = (store) => {
+  return (next) => {
+    return (action) => {
+        console.log('dispatching\n', action);
+        const result = next(action);
+        console.log('next state\n', store.getState());
+        return result;
+    }
+  }
+};
+
+let middlewares = [
+  thunkMiddleware,
+];
+
+if (process.env.NODE_ENV !== 'production') {
+  middlewares = [
+    ...middlewares,
+    logger
+  ];
+}
+
 const store = createStore(rootReducer,
-  applyMiddleware(
-    thunkMiddleware
-  )
+  applyMiddleware(...middlewares),
 );
 
 store.dispatch(enableEthereum());
