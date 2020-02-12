@@ -65,7 +65,7 @@ export const loadingWallet = (index) => ({
 });
 
 export const WALLET_LOADED = 'WALLET_LOADED';
-export const walletLoaded = (index, address, nonce, name, keycardAddress, balance, icon, maxTxValue) => ({
+export const walletLoaded = (index, address, nonce, name, keycardAddress, balance, availableBalance, maxTxValue) => ({
   type: WALLET_LOADED,
   index,
   address,
@@ -73,7 +73,7 @@ export const walletLoaded = (index, address, nonce, name, keycardAddress, balanc
   name,
   keycardAddress,
   balance,
-  icon,
+  availableBalance,
   maxTxValue,
 });
 
@@ -165,7 +165,7 @@ export const loadWallets = (owner) => {
   return (dispatch) => {
     dispatch(loadingWallets())
     dispatch(countingWallets())
-    return KeycardWalletFactory.methods.ownerWalletsCount(owner).call()
+    return KeycardWalletFactory.methods.countWalletsForOwner(owner).call()
       .then((count) => {
         dispatch(walletsCounted(count));
         for (var i = 0; i < count; i++) {
@@ -194,6 +194,8 @@ export const walletWatched = (index, date) => ({
 
 export const watchWallet = (walletContract, index, nonce) => {
   return (dispatch) => {
+    //FIXME: needed for status browser?
+    return;
     window.setTimeout(() => {
       walletContract.methods.nonce().call()
         .then((newNonce) => {
@@ -224,18 +226,14 @@ export const loadWallet = (owner, index) => {
     });
     walletContract.address = address;
 
-    const name = await walletContract.methods.name().call();
+    const name = "x";
     const balance = await web3.eth.getBalance(address);
+    const availableBalance = await walletContract.methods.availableBalance().call();
     const keycardAddress = await walletContract.methods.keycard().call();
-    const nonce = await walletContract.methods.nonce().call();
-    const maxTxValue = await walletContract.methods.settings().call();
+    const nonce = 0;
+    const { maxTxValue } = await walletContract.methods.settings().call();
 
-    let icon = "";
-    try {
-      icon = String.fromCodePoint(name);
-    } catch(e){}
-
-    dispatch(walletLoaded(index, address, nonce, name, keycardAddress, balance, icon, maxTxValue))
+    dispatch(walletLoaded(index, address, nonce, name, keycardAddress, balance, availableBalance, maxTxValue))
     // FIXME: change it with an alternative to continuous fetching
     dispatch(watchWallet(walletContract, index, nonce))
   };
@@ -257,10 +255,9 @@ export const newWalletCancel = () => {
 }
 
 export const CREATING_WALLET = "CREATING_WALLET";
-export const creatingWallet = (index, icon) => ({
+export const creatingWallet = (index) => ({
   type: CREATING_WALLET,
   index,
-  icon
 });
 
 export const WALLET_CREATED = "WALLET_CREATED";
@@ -289,32 +286,25 @@ export const newWalletFormMaxTxValueChanged = (value) => ({
 export const createWallet = () => {
   return async (dispatch, getState) => {
     const state = getState();
-    const icon = state.newWalletForm.icon;
     const maxTxValue = web3.utils.toWei(state.newWalletForm.maxTxValue);
     const keycardAddress = state.newWalletForm.keycardAddress || emptyAddress;
-    const codePoint = icon.codePointAt(0);
-    const name = "0x" + codePoint.toString(16);
-    const create = KeycardWalletFactory.methods.create(name, keycardAddress, maxTxValue);
+    const create = KeycardWalletFactory.methods.create(keycardAddress, {maxTxValue: maxTxValue, minBlockDistance: 1}, false);
     const walletIndex = state.wallets.length;
 
-    try {
-      const estimatedGas = await create.estimateGas()
-      create.send({ from: state.owner, gas: estimatedGas })
-        .then((receipt) => {
-          console.log(receipt)
-          dispatch(walletCreated(receipt))
-          dispatch(newWalletCancel())
-          dispatch(loadWallets(state.owner))
-        })
-        .catch((err) => {
-          dispatch(web3Error(err))
-          dispatch(walletCreationError(err))
-        });
-      dispatch(creatingWallet(walletIndex, icon))
-    } catch(err) {
-      dispatch(web3Error(err))
-      dispatch(walletCreationError(err))
-    }
+    const estimatedGas = await create.estimateGas()
+    create.send({ from: state.owner, gas: estimatedGas })
+      .then((receipt) => {
+        console.log(receipt)
+        dispatch(walletCreated(receipt))
+        dispatch(newWalletCancel())
+        dispatch(loadWallets(state.owner))
+      })
+      .catch((err) => {
+        dispatch(web3Error(err))
+        dispatch(walletCreationError(err))
+      });
+
+    dispatch(creatingWallet(walletIndex))
   }
 }
 

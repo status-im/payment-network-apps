@@ -2,6 +2,8 @@ import EmbarkJS from 'Embark/EmbarkJS';
 import KeycardWalletFactory from 'Embark/contracts/KeycardWalletFactory';
 import KeycardWallet from 'Embark/contracts/KeycardWallet';
 import { emptyAddress } from '../utils';
+import { recoverTypedSignature } from 'eth-sig-util';
+import ethUtil from 'ethereumjs-util';
 
 export const NEW_WALLET = 'NEW_WALLET';
 export const newWallet = () => ({
@@ -64,9 +66,8 @@ export const loadingWallet = () => ({
 });
 
 export const WALLET_LOADED = 'WALLET_LOADED';
-export const walletLoaded = (nonce, balance, maxTxValue) => ({
+export const walletLoaded = (balance, maxTxValue) => ({
   type: WALLET_LOADED,
-  nonce,
   balance,
   maxTxValue,
 });
@@ -87,17 +88,61 @@ export const loadNetworkID = () => {
   }
 }
 
+function signPaymentRequest(getState, message, cb) {
+  const state = getState();
+
+  let domain = [
+    { name: "name", type: "string" },
+    { name: "version", type: "string" },
+    { name: "chainId", type: "uint256" },
+    { name: "verifyingContract", type: "address" }
+  ];
+
+  let payment = [
+    { name: "blockNumber", type: "uint256" },
+    { name: "blockHash", type: "bytes32" },
+    { name: "amount", type: "uint256" },
+    { name: "to", type: "address" }
+  ];
+
+  let domainData = {
+    name: "KeycardWallet",
+    version: "1",
+    chainId: state.networkID,
+    verifyingContract: KeycardWalletFactory.address
+  };
+
+  const data = {
+    types: {
+      EIP712Domain: domain,
+      Payment: payment
+    },
+    primaryType: "Payment",
+    domain: domainData,
+    message: message
+  };
+
+  const dataString = JSON.stringify(data);
+
+  const signer = state.owner;
+  if (window.ethereum && window.ethereum.isStatus) {
+    //FIXME: why is signer needed?
+    window.ethereum.send("keycard_signTypedData", [signer, dataString])
+      .then(resp => cb(undefined, resp, data))
+      .catch(err => cb(err, undefined, data));
+  } else {
+    web3.currentProvider.sendAsync({
+      method: "eth_signTypedData_v3",
+      params: [signer, dataString],
+      from: signer
+    }, (err, resp) => cb(err, resp, data));
+  }
+}
+
+
 export const enableEthereum = () => {
   if (window.ethereum) {
     window.web3 = new Web3(ethereum);
-    //FIXME: hack
-    try {
-      // alert(statusWeb3)
-      web3.eth.personal.signMessagePinless = statusWeb3.personal.signMessagePinless;
-      // alert(web3.eth.personal.signMessagePinless)
-    } catch(err){
-      alert(err)
-    }
 
     return (dispatch) => {
       ethereum.enable()
@@ -131,7 +176,6 @@ export const loadOwner = () => {
     return web3.eth.getAccounts()
       .then((accounts) => {
         const owner = accounts[0];
-        // web3.eth.personal.signMessagePinless("hello", owner)
         dispatch(ownerLoaded(owner))
         dispatch(loadOwnerBalance(owner))
       })
@@ -165,34 +209,23 @@ export const paymentRequested = () => ({
   type: PAYMENT_REQUESTED,
 });
 
-export const signMetaTx = (walletContract, nonce) => {
-  return (dispatch, getState) => {
-    const to = getState().owner;
-    const value = 10;
-    const message = web3.utils.soliditySha3(nonce, to, value);
-
+export const sendPaymentRequest = (walletContract, message, sig) => {
+  return async (dispatch) => {
     try {
       dispatch(requestingPayment())
-      web3.eth.personal.signMessagePinless(message, "0x0000000000000000000000000000000000000000", "", async (err, sig) => {
-        if (err) {
-          alert("err " + err)
-        } else {
-          const signedHash = await web3.eth.accounts.hashMessage(message);
-          const requestPayment = walletContract.methods.requestPayment(signedHash, sig, nonce, to, value);
-          const estimatedGas = await requestPayment.estimateGas();
-          const receipt = await requestPayment.send({
-            gas: estimatedGas
-          });
-          dispatch(paymentRequested())
-        }
+      const requestPayment = await walletContract.methods.requestPayment(message, sig);
+      const estimatedGas = await requestPayment.estimateGas();
+      const receipt = await requestPayment.send({
+        gas: estimatedGas
       });
+      dispatch(paymentRequested())
     } catch(err) {
-      alert(err)
+      console.error("ERROR: ", err)
     }
   }
 }
 
-export const loadWallet = (walletAddress) => {
+export const loadWallet = (walletAddress, message, sig) => {
   return async (dispatch) => {
     dispatch(loadingWallet())
 
@@ -203,17 +236,11 @@ export const loadWallet = (walletAddress) => {
     });
     walletContract.address = walletAddress;
 
-    const nonce = await walletContract.methods.nonce().call();
-    const balance = await web3.eth.getBalance(walletAddress);
-    const maxTxValue = await walletContract.methods.settings().call();
+    const balance = await walletContract.methods.availableBalance().call();
+    const settings = await walletContract.methods.settings().call();
 
-    let icon = "";
-    try {
-      icon = String.fromCodePoint(name);
-    } catch(e){}
-
-    dispatch(walletLoaded(nonce, balance, maxTxValue))
-    dispatch(signMetaTx(walletContract, nonce))
+    dispatch(walletLoaded(balance, settings.maxTxValue))
+    dispatch(sendPaymentRequest(walletContract, message, sig))
   };
 }
 
@@ -234,32 +261,49 @@ export const walletFound = (address) => ({
   address,
 });
 
-export const findWallet = (keycardAddress) => {
+export const PAYMENT_AMOUNT_VALUE_CHANGE = "PAYMENT_AMOUNT_VALUE_CHANGE";
+export const paymentAmountValueChange = (value) => ({
+  type: PAYMENT_AMOUNT_VALUE_CHANGE,
+  value
+});
+
+export const findWallet = (keycardAddress, message, sig) => {
   return async (dispatch) => {
     dispatch(findingWallet());
     KeycardWalletFactory.methods.keycardsWallets(keycardAddress).call()
       .then((address) => {
+        //FIXME: if 0x00, the wallet was not found
         dispatch(walletFound(address))
-        dispatch(loadWallet(address))
+        dispatch(loadWallet(address, message, sig))
       })
       .catch((err) => dispatch(web3Error(err)))
   }
 }
 
-export const signMessagePinless = (message) => {
-  return (dispatch, getState) => {
-    const owner = getState().owner;
-    // web3 0.2 style using status injected web3
+export const requestPayment = () => {
+  return async (dispatch, getState) => {
+    const state = getState();
+    let block = await web3.eth.getBlock("latest");
+    const message = {
+      blockNumber: block.number,
+      blockHash: block.hash,
+      to: state.owner,
+      amount: state.txAmount,
+    }
+
     try {
-      //FIXME: put a random message
-      web3.eth.personal.signMessagePinless("112233", "0x0000000000000000000000000000000000000000", "", function(err, sig) {
+      signPaymentRequest(getState, message, function(err, response, data) {
         if (err) {
           dispatch(web3Error(err))
         } else {
-          //FIXME: put a random message
-          const address = web3.eth.accounts.recover("0x112233", sig)
+          const sig = response.result;
+          const address = recoverTypedSignature({
+            data: data,
+            sig: sig,
+          })
+
           dispatch(keycardDiscovered(address));
-          dispatch(findWallet(address));
+          dispatch(findWallet(address, message, sig));
         }
       })
     } catch(err) {

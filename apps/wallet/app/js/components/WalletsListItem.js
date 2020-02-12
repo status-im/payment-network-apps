@@ -71,10 +71,9 @@ const WalletsListItem = ({ wallet, onItemClick }) => {
               <Avatar style={styles.avatar}>
                 {wallet.toppingUp &&
                   <CircularProgress color="secondary" style={styles.avatarLoading}/>}
-
-                {wallet.icon}
+                  {wallet.icon}
               </Avatar>
-              <StyledListItemText primary={formattedBalance(wallet.balance) + " Ξ"} secondary={wallet.creating ? secondaryLoading : secondary} />
+              <StyledListItemText primary={formattedBalance(wallet.availableBalance) + " of " + formattedBalance(wallet.balance) + " Ξ"} secondary={wallet.creating ? secondaryLoading : secondary} />
             </React.Fragment>
         }
 

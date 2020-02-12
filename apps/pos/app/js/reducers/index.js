@@ -17,6 +17,7 @@ import {
   WALLET_FOUND,
   REQUESTING_PAYMENT,
   PAYMENT_REQUESTED,
+  PAYMENT_AMOUNT_VALUE_CHANGE
 } from "../actions";
 
 const customerInitialState = {
@@ -36,6 +37,7 @@ const initialState = {
   loadingWallet: false,
   requestingPayment: false,
   paymentRequested: false,
+  txAmount: 0
 };
 
 export default function(state, action) {
@@ -48,14 +50,13 @@ export default function(state, action) {
 
   switch (action.type) {
     case ETHEREUM_LOAD_ERROR:
-      alert(action.error)
+      console.error(action.error)
       return Object.assign({}, state, {
         loadingWeb3: false,
         loadingWeb3Error: action.err
       });
     case WEB3_ERROR:
       console.error(action.error)
-      alert(action.error)
       break;
     case ETHEREUM_LOADED:
       return Object.assign({}, state, {
@@ -103,7 +104,6 @@ export default function(state, action) {
       });
     case WALLET_LOADED:
       const wallet = {
-        nonce: action.nonce,
         balance: action.balance,
         maxTxValue: action.maxTxValue,
       }
@@ -123,6 +123,10 @@ export default function(state, action) {
       return Object.assign({}, state, {
         requestingPayment: false,
         paymentRequested: true,
+      });
+    case PAYMENT_AMOUNT_VALUE_CHANGE:
+      return Object.assign({}, state, {
+        txAmount: action.value
       });
   }
 

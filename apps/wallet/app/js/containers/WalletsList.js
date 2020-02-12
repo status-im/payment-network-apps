@@ -3,6 +3,7 @@ import WalletsList from '../components/WalletsList';
 import { newWallet } from '../actions';
 
 const VALID_NETWORK_ID = 3;
+// const VALID_NETWORK_ID = 5;
 const LOCAL_NETWORK_ID = 1337;
 
 const mapStateToProps = state => ({
