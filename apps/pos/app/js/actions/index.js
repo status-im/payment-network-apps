@@ -81,7 +81,7 @@ export const networkIDLoaded = (id) => ({
 export const loadNetworkID = () => {
   return (dispatch) => {
     web3.eth.net.getId()
-      .then((id) => dispatch(networkIDLoaded(id)))
+      .then((id) => dispatch(networkIDLoaded(parseInt(id))))
       .catch((err) => {
         dispatch(web3Error(err))
       })
