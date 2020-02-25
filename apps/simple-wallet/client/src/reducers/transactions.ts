@@ -9,6 +9,7 @@ import {
 
 export interface TransactionState {
   id: string
+  event: string
   transactionHash: string
   pending: boolean | undefined
   from: string | undefined
@@ -26,6 +27,7 @@ export interface TransactionsState {
 
 const newTransactionState = (): TransactionState => ({
   id: "",
+  event: "",
   transactionHash: "",
   pending: undefined,
   from: undefined,
@@ -75,6 +77,7 @@ export const transactionsReducer = (state: TransactionsState = initialState, act
           [action.transactionHash]: {
             ...txState,
             id: action.id,
+            event: action.event,
             transactionHash: action.transactionHash,
             pending: action.pending,
             from: action.from,

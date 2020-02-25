@@ -18,6 +18,7 @@ export interface TxsLoadedAction {
 export const TXS_TRANSACTION_DISCOVERED = "TXS_TRANSACTION_DISCOVERED";
 export interface TxsTransactionDiscoveredAction {
   type: typeof TXS_TRANSACTION_DISCOVERED
+  event: string
   pending: boolean
   id: string
   transactionHash: string
@@ -38,8 +39,9 @@ export type TxsActions =
   TxsTransactionDiscoveredAction |
   TxsTransactionConfirmedAction;
 
-export const topUpDiscovered = (id: string, transactionHash: string, pending: boolean, from: string, to: string | undefined, value: string): TxsTransactionDiscoveredAction => ({
+export const transactionDiscovered = (event: string, id: string, transactionHash: string, pending: boolean, from: string, to: string | undefined, value: string): TxsTransactionDiscoveredAction => ({
   type: TXS_TRANSACTION_DISCOVERED,
+  event,
   id,
   transactionHash,
   pending,
@@ -81,6 +83,9 @@ export const watchPendingTransaction = (web3: Web3, dispatch: Dispatch, walletAd
 export const loadTransactions = (web3: Web3, dispatch: Dispatch, getState: () => RootState, wallet: Contract) => {
   const state = getState();
   const walletAddress = state.wallet.walletAddress;
+  if (walletAddress === undefined) {
+    return;
+  }
 
   dispatch(loadingTransactions());
   wallet.getPastEvents('TopUp', {fromBlock: 0, toBlock: 'latest'}).then((events: any) => {
@@ -88,9 +93,22 @@ export const loadTransactions = (web3: Web3, dispatch: Dispatch, getState: () =>
     //FIXME: use the right type for event
     events.forEach((event: any) => {
       const values = event.returnValues;
-      dispatch(topUpDiscovered(event.id, event.transactionHash, false, values.from, walletAddress, values.value));
+      dispatch(transactionDiscovered("TopUp", event.id, event.transactionHash, false, values.from, walletAddress, values.value));
     });
     dispatch(transactionsLoaded());
+  }).catch(error => {
+    //FIXME: handle error
+    console.log("error", error)
+  });
+
+  wallet.getPastEvents('NewPaymentRequest', {fromBlock: 0, toBlock: 'latest'}).then((events: any) => {
+    //FIXME: add loading event
+    //FIXME: use the right type for event
+    events.forEach((event: any) => {
+      const values = event.returnValues;
+      dispatch(transactionDiscovered("NewPaymentRequest", event.id, event.transactionHash, false, walletAddress, values.to, values.amount));
+    });
+    // dispatch(transactionsLoaded());
   }).catch(error => {
     //FIXME: handle error
     console.log("error", error)
@@ -99,7 +117,13 @@ export const loadTransactions = (web3: Web3, dispatch: Dispatch, getState: () =>
   web3.eth.getBlockNumber().then((blockNumber: number) => {
     wallet.events.TopUp({fromBlock: blockNumber}).on('data', (event: any) => {
       const values = event.returnValues;
-      dispatch(topUpDiscovered(event.id, event.transactionHash, true, values.from, walletAddress, values.value));
+      dispatch(transactionDiscovered("TopUp", event.id, event.transactionHash, true, values.from, walletAddress, values.value));
+      watchPendingTransaction(web3, dispatch, walletAddress, event.transactionHash);
+    })
+
+    wallet.events.NewPaymentRequest({fromBlock: blockNumber}).on('data', (event: any) => {
+      const values = event.returnValues;
+      dispatch(transactionDiscovered("NewPaymentRequest", event.id, event.transactionHash, true, walletAddress, values.to, values.amount));
       watchPendingTransaction(web3, dispatch, walletAddress, event.transactionHash);
     })
   });

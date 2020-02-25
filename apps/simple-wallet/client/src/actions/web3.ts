@@ -8,6 +8,8 @@ import { loadWallet } from './wallet';
 
 export const VALID_NETWORK_NAME = "Ropsten";
 export const VALID_NETWORK_ID = 3;
+// export const VALID_NETWORK_NAME = "Goerli";
+// export const VALID_NETWORK_ID = 5;
 export const LOCAL_NETWORK_ID = 1337;
 
 
@@ -70,7 +72,7 @@ export const initializeWeb3 = () => {
           const t: Web3Type = w.ethereum.isStatus ? Web3Type.Status : Web3Type.Generic;
           dispatch(web3Initialized(t));
           config.web3!.eth.net.getId().then((id: number) => {
-            if (id !== VALID_NETWORK_ID) {
+            if (id !== VALID_NETWORK_ID && id !== LOCAL_NETWORK_ID) {
               dispatch(web3Error(`wrong network, please connect to ${VALID_NETWORK_NAME}`));
               return;
             }
