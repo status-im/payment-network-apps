@@ -5,8 +5,13 @@ import { abi as keycardWalletFactoryABI } from '../contracts/KeycardWalletFactor
 import { abi as keycardWalletABI } from '../contracts/KeycardWallet';
 import { isEmptyAddress } from '../utils';
 import { loadTransactions } from './transactions';
+import { Contract } from 'web3-eth-contract';
 
-const walletFactoryAddress = "0x43069D770a44352c94E043aE3F815BfeAfE5b279";
+// const walletFactoryAddress = "0x43069D770a44352c94E043aE3F815BfeAfE5b279";
+// const walletFactoryAddress = "0x8C9437F77103E6aC431Af3e9D45cD3D8A972047e";
+
+// Ropsten
+const walletFactoryAddress = "0x0062A04FD283e6E5C4C4c5e355b2c1A3781813C3";
 //FIXME: remove test address
 // const testKeycardAddress = "0x13F1e02E78A0636420cDc1BDaE343aDbBfF308F0";
 
@@ -49,6 +54,7 @@ export const WALLET_BALANCE_LOADED = "WALLET_BALANCE_LOADED";
 export interface WalletBalanceLoadedAction {
   type: typeof WALLET_BALANCE_LOADED
   balance: string
+  availableBalance: string
 }
 
 export const WALLET_TOGGLE_QRCODE = "WALLET_TOGGLE_QRCODE";
@@ -96,9 +102,10 @@ export const loadingWalletBalance = (address: string): WalletLoadingBalanceActio
   address,
 });
 
-export const balanceLoaded = (balance: string): WalletBalanceLoadedAction => ({
+export const balanceLoaded = (balance: string, availableBalance: string): WalletBalanceLoadedAction => ({
   type: WALLET_BALANCE_LOADED,
   balance,
+  availableBalance,
 });
 
 export const showWalletQRCode = (): WalletToggleQRCodeAction => ({
@@ -134,10 +141,10 @@ export const loadWallet = (web3: Web3, dispatch: Dispatch, getState: () => RootS
       return;
     }
 
-    dispatch(walletAddressLoaded(keycardAddress, walletAddress));
-    loadBalance(web3, dispatch, walletAddress);
-
     const wallet = new web3.eth.Contract(keycardWalletABI, walletAddress);
+
+    dispatch(walletAddressLoaded(keycardAddress, walletAddress));
+    dispatch<any>(loadBalance(web3, walletAddress, wallet));
     loadTransactions(web3, dispatch, getState, wallet);
   }).catch((error: string) => {
     //FIXME: manage error
@@ -146,12 +153,16 @@ export const loadWallet = (web3: Web3, dispatch: Dispatch, getState: () => RootS
 }
 
 
-export const loadBalance = (web3: Web3, dispatch: Dispatch, walletAddress: string) => {
-  dispatch(loadingWalletBalance(walletAddress));
-  web3.eth.getBalance(walletAddress).then((balance: string) => {
-    dispatch(balanceLoaded(balance));
-  }).catch((error: string) => {
-    //FIXME: manage error
-    console.log("error", error)
-  })
+export const loadBalance = (web3: Web3, walletAddress: string, wallet: Contract) => {
+  return async (dispatch: Dispatch) => {
+    dispatch(loadingWalletBalance(walletAddress));
+    try {
+      const balance = await web3.eth.getBalance(walletAddress);
+      const availableBalance = await wallet.methods.availableBalance().call();
+      dispatch(balanceLoaded(balance, availableBalance));
+    } catch (err) {
+      //FIXME: manage error
+      console.error(err)
+    }
+  }
 }

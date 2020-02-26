@@ -3,6 +3,7 @@ import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import { Props } from '../containers/TopPanel';
+import { config } from '../global';
 
 const useStyles = makeStyles(theme => ({
   container: {
@@ -30,16 +31,32 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
+const roundEther = (wei: string | undefined) => {
+  const fullTotal = wei ? config.web3!.utils.fromWei(wei) : "0";
+  const parts = fullTotal.split(".");
+  let roundedBalance = parts[0];
+  const decimals = (parts[1] || "").slice(0, 4)
+  if (decimals.length > 0) {
+    roundedBalance = `${roundedBalance}.${decimals}`;
+  }
+
+  return [fullTotal, roundedBalance];
+}
+
+
 const TopPanel = (props: Props) => {
   const classes = useStyles();
+
+  const [balance, roundedBalance] = roundEther(props.balance);
+  const [availableBalance, roundedAvailableBalance] = roundEther(props.availableBalance);
 
   return <div className={classes.container}>
     <div>
       <Typography variant="h2" color="inherit">
-        {props.roundedBalance} Ξ
+        {roundedAvailableBalance} Ξ
       </Typography>
       <Typography variant="body1" color="inherit" style={{textAlign: "center"}}>
-        {props.balance}
+        {availableBalance}
       </Typography>
       <div className={classes.actions}>
         <Button

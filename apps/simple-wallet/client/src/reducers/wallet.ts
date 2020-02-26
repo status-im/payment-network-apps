@@ -16,7 +16,8 @@ export interface WalletState {
   keycardAddress: string | undefined
   walletAddress: string | undefined
   walletFound: boolean
-  balance: string
+  balance: string | undefined
+  availableBalance: string | undefined
   error: string | undefined
   showWalletQRCode: boolean
 }
@@ -27,7 +28,8 @@ const initialState = {
   keycardAddress: undefined,
   walletAddress: undefined,
   walletFound: false,
-  balance: "",
+  balance: undefined,
+  availableBalance: undefined,
   error: undefined,
   showWalletQRCode: false,
 };
@@ -93,6 +95,7 @@ export const walletReducer = (state: WalletState = initialState, action: WalletA
         ready: true,
         loading: false,
         balance: action.balance,
+        availableBalance: action.availableBalance,
       }
     }
   }
