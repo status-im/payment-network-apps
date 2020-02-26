@@ -16,12 +16,28 @@ async function getDefaultSender() {
     return accounts[0];
 }
 
+function loadAccount(account, passfile) {
+    let json = fs.readFileSync(account, "utf-8");
+    let pass = fs.readFileSync(passfile, "utf-8").split("\n")[0].replace("\r", "");
+    return web3.eth.accounts.decrypt(json, pass);
+}
+
 async function createWallet(sender, keycard, maxTxValue, minBlockDistance) {
     let methodCall = KeycardWalletFactory.methods.create(keycard.toLowerCase(), {maxTxValue: maxTxValue, minBlockDistance: minBlockDistance}, true);
-
+    
     try {
-        let gasAmount = await methodCall.estimateGas({from: sender})
-        let receipt = await methodCall.send({from: sender, gas: gasAmount});
+        let receipt;
+        
+        if (typeof(sender) == "string") {
+            let gasAmount = await methodCall.estimateGas({from: sender});
+            receipt = await methodCall.send({from: sender, gas: gasAmount});
+        } else {
+            let gasAmount = await methodCall.estimateGas({from: sender.address});
+            let data = methodCall.encodeABI();
+            let signedTx = await sender.signTransaction({to: KeycardWalletFactory.options.address, data: data, gas: gasAmount});
+            receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+        }
+
         const event = receipt.events.NewWallet;
         return event.returnValues.wallet;
     } catch(err) {
@@ -32,7 +48,6 @@ async function createWallet(sender, keycard, maxTxValue, minBlockDistance) {
 
 async function run() {
     KeycardWalletFactory.transactionConfirmationBlocks = 3;
-    let sender = argv["sender"] || await getDefaultSender();
     
     let keycards;
 
@@ -49,6 +64,23 @@ async function run() {
     if (!argv["registry"]) {
         console.error("the ---registry option must be specified");
         process.exit(1);
+    }
+
+    let sender;
+
+    if (argv["account"]) {
+        if (!argv["passfile"]) {
+            console.error("the ---passfile option must be specified when using the --account option");
+            process.exit(1);
+        }
+
+        if (argv["sender"]) {
+            console.warn("--account used, --sender will be ignored");
+        }
+
+        sender = loadAccount(argv["account"], argv["passfile"]);
+    } else {
+        sender = argv["sender"] || await getDefaultSender();
     }
 
     let walletAddresses = await Promise.all(keycards.map((keycard) => createWallet(sender, keycard, argv["maxTxValue"], argv["minBlockDistance"])));

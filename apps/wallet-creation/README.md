@@ -31,7 +31,11 @@ or
 Other options are
 `--endpoint`: the address of the RPC endpoint. The client as an empty origin so make sure to start the Ethereum node as needed. For ws, you can just start it with --wsorigins="*". The default value is ws://127.0.0.1:8546.
 
-`--sender`: the address signing and sending the transactions. This account will pay for gas. **THIS ACCOUNT MUST BE ALREADY UNLOCKED**. If not specified, accounts[0] is used. Also in this case, the account must be unlocked.
+`--sender`: the address signing and sending the transactions. This account will pay for gas. **THIS ACCOUNT MUST BE ALREADY UNLOCKED**. If not specified, accounts[0] is used. Also in this case, the account must be unlocked. Ignored if --account is used.
+
+`--account`: the path to a JSON encoded private key. If this is specified, sender will be ignored. Use this if your endpoint is Infura or similar. You do not need a local node in this case. You also need to specify --passfile.
+
+`--passfile`: the path to a file storing the password for the JSON encoded private key. Always used with --account.
 
 `--maxTxValue`: the maxTxValue for payment transaction. This can be changed later but providing a meaningful value on creation can be convenient. Defaults to 100000000.
 
