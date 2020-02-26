@@ -132,6 +132,10 @@ export const abi: AbiItem[] = [
                         "type": "bytes32"
                     },
                     {
+                        "name": "currency",
+                        "type": "address"
+                    },
+                    {
                         "name": "amount",
                         "type": "uint256"
                     },
@@ -299,6 +303,11 @@ export const abi: AbiItem[] = [
             {
                 "indexed": false,
                 "name": "to",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "name": "currency",
                 "type": "address"
             },
             {

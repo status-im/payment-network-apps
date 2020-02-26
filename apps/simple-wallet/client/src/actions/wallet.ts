@@ -11,7 +11,7 @@ import { Contract } from 'web3-eth-contract';
 // const walletFactoryAddress = "0x8C9437F77103E6aC431Af3e9D45cD3D8A972047e";
 
 // Ropsten
-const walletFactoryAddress = "0x0062A04FD283e6E5C4C4c5e355b2c1A3781813C3";
+const walletFactoryAddress = "0xf9bcEf45E39cC5d976585b5A9A722113E3c58aCc";
 //FIXME: remove test address
 // const testKeycardAddress = "0x13F1e02E78A0636420cDc1BDaE343aDbBfF308F0";
 
