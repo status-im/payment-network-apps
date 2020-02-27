@@ -5,6 +5,8 @@ import { emptyAddress } from '../utils';
 import { recoverTypedSignature } from 'eth-sig-util';
 import ethUtil from 'ethereumjs-util';
 
+const addressZero = "0x0000000000000000000000000000000000000000";
+
 export const NEW_WALLET = 'NEW_WALLET';
 export const newWallet = () => ({
   type: NEW_WALLET,
@@ -215,12 +217,13 @@ export const sendPaymentRequest = (walletContract, message, sig) => {
     try {
       dispatch(requestingPayment())
       const requestPayment = await walletContract.methods.requestPayment(message, sig);
-      const estimatedGas = await requestPayment.estimateGas();
+      const gas = await requestPayment.estimateGas();
       const receipt = await requestPayment.send({
-        gas: estimatedGas
+        gas: gas
       });
       dispatch(paymentRequested())
     } catch(err) {
+      alert(err)
       console.error("ERROR: ", err)
     }
   }
@@ -273,11 +276,18 @@ export const findWallet = (keycardAddress, message, sig) => {
     dispatch(findingWallet());
     KeycardWalletFactory.methods.keycardsWallets(keycardAddress).call()
       .then((address) => {
-        //FIXME: if 0x00, the wallet was not found
+        //FIXME: if 0x00, display error
+        if (address === addressZero) {
+          alert("wallet not found")
+          return
+        }
+
         dispatch(walletFound(address))
         dispatch(loadWallet(address, message, sig))
       })
-      .catch((err) => dispatch(web3Error(err)))
+      .catch((err) => {
+        dispatch(web3Error(err))
+      });
   }
 }
 
