@@ -96,14 +96,6 @@ export const loadNetworkID = () => {
 export const enableEthereum = () => {
   if (window.ethereum) {
     window.web3 = new Web3(ethereum);
-    //FIXME: hack
-    try {
-      // alert(statusWeb3)
-      web3.eth.personal.signMessagePinless = statusWeb3.personal.signMessagePinless;
-      // alert(web3.eth.personal.signMessagePinless)
-    } catch(err){
-      alert(err)
-    }
 
     return (dispatch) => {
       ethereum.enable()
