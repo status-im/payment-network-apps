@@ -115,7 +115,7 @@ const TransactionsListItem = (props: Props) => {
   </span>;
 
   const secondary = <span>
-    <span className={classes.block}>from: {fromAddress}</span>
+    <span className={classes.block}>{tx.blockNumber} from: {fromAddress}</span>
     <span className={classes.block}>to: {toAddress}</span>
   </span>;
 
