@@ -11,19 +11,10 @@ import ListItemText from '@material-ui/core/ListItemText';
 import Divider from '@material-ui/core/Divider';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Fade from '@material-ui/core/Fade';
+import { Props } from '../containers/TransactionsListItem';
 import {
   compressedAddress,
 } from '../utils';
-
-export interface Props {
-  event: string
-  transactionHash: string
-  pending: boolean | undefined
-  from: string | undefined
-  to: string | undefined
-  valueInETH: string
-}
-
 
 const StyledListItemText = withStyles({
   secondary: {
@@ -34,8 +25,14 @@ const StyledListItemText = withStyles({
 })(ListItemText);
 
 const useStyles = makeStyles(theme => ({
-  secondaryLine: {
+  block: {
     display: "block"
+  },
+  timestamp: {
+    display: "block",
+    fontStyle: "italic",
+    color: "rgba(0, 0, 0, 0.54)",
+    fontSize: 12,
   },
   avatar: {
     backgroundColor: '#fff',
@@ -81,14 +78,45 @@ const icon = (event: string, className: any) => {
   }
 };
 
+export function timestampToString(timestamp: number | undefined) {
+  if (timestamp === undefined) {
+    return "";
+  }
+
+  return new Date(timestamp * 1000).toLocaleDateString('default', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 const TransactionsListItem = (props: Props) => {
   const classes = useStyles();
-  const fromAddress = props.from ? compressedAddress(props.from, 8) : "";
-  const toAddress = props.to ? compressedAddress(props.to, 8) : "";
+
+  const tx = props.transactions[props.id];
+  if (tx === undefined) {
+    return null;
+  }
+
+  const fromAddress = tx.from ? compressedAddress(tx.from, 8) : "";
+  const toAddress = tx.to ? compressedAddress(tx.to, 8) : "";
+
+  let date = "";
+  const block = props.blocks[tx.blockNumber];
+  if (block !== undefined) {
+    date = timestampToString(block.timestamp);
+  }
+
+  const primary = <span>
+    <span className={classes.block}>{tx.valueInETH} Ξ</span>
+    <span className={classes.timestamp}>{date}</span>
+  </span>;
 
   const secondary = <span>
-    <span className={classes.secondaryLine}>from: {fromAddress}</span>
-    <span className={classes.secondaryLine}>to: {toAddress}</span>
+    <span className={classes.block}>from: {fromAddress}</span>
+    <span className={classes.block}>to: {toAddress}</span>
   </span>;
 
   const [avatarClass, iconClass] = (event => {
@@ -100,7 +128,7 @@ const TransactionsListItem = (props: Props) => {
       default:
         return [classes.avatar, classes.icon];
     }
-  })(props.event)
+  })(tx.event)
 
   return (
     <>
@@ -108,13 +136,13 @@ const TransactionsListItem = (props: Props) => {
         <ListItemAvatar>
           <Fade in={true} timeout={800}>
             <Avatar className={avatarClass}>
-              {(props.pending === true || props.pending === undefined)
+              {(tx.pending === true || tx.pending === undefined)
                 && <CircularProgress color="secondary" className={classes.avatarLoading}/>}
-              {icon(props.event, iconClass)}
+              {icon(tx.event, iconClass)}
             </Avatar>
           </Fade>
         </ListItemAvatar>
-        <StyledListItemText primary={`${props.valueInETH} Ξ`} secondary={secondary} />
+        <StyledListItemText primary={primary} secondary={secondary} />
       </ListItem>
       <Divider />
     </>

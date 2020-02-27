@@ -11,15 +11,21 @@ import {
   TransactionsState,
   transactionsReducer,
 } from './transactions';
+import {
+  BlocksState,
+  blocksReducer,
+} from './blocks';
 
 export interface RootState {
   web3: Web3State,
   wallet: WalletState,
   transactions: TransactionsState,
+  blocks: BlocksState,
 }
 
 export const createRootReducer = () => combineReducers({
   web3: web3Reducer,
   wallet: walletReducer,
   transactions: transactionsReducer,
+  blocks: blocksReducer,
 });

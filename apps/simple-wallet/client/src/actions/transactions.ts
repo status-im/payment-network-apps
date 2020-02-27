@@ -4,6 +4,7 @@ import { Contract } from 'web3-eth-contract';
 import Web3 from 'web3';
 import { TransactionReceipt } from 'web3-core';
 import { loadBalance } from './wallet';
+import { loadBlock } from './blocks';
 
 export const TXS_LOADING = "TXS_LOADING";
 export interface TxsLoadingAction {
@@ -21,6 +22,7 @@ export interface TxsTransactionDiscoveredAction {
   event: string
   pending: boolean
   id: string
+  blockNumber: number
   transactionHash: string
   from: string | undefined
   to: string | undefined
@@ -39,10 +41,11 @@ export type TxsActions =
   TxsTransactionDiscoveredAction |
   TxsTransactionConfirmedAction;
 
-export const transactionDiscovered = (event: string, id: string, transactionHash: string, pending: boolean, from: string, to: string | undefined, value: string): TxsTransactionDiscoveredAction => ({
+export const transactionDiscovered = (event: string, id: string, blockNumber: number, transactionHash: string, pending: boolean, from: string, to: string | undefined, value: string): TxsTransactionDiscoveredAction => ({
   type: TXS_TRANSACTION_DISCOVERED,
   event,
   id,
+  blockNumber,
   transactionHash,
   pending,
   from,
@@ -88,27 +91,22 @@ export const loadTransactions = (web3: Web3, dispatch: Dispatch, getState: () =>
   }
 
   dispatch(loadingTransactions());
-  wallet.getPastEvents('TopUp', {fromBlock: 0, toBlock: 'latest'}).then((events: any) => {
+  wallet.getPastEvents('allEvents', {fromBlock: 0, toBlock: 'latest'}).then((events: any) => {
     //FIXME: add loading event
     //FIXME: use the right type for event
     events.forEach((event: any) => {
       const values = event.returnValues;
-      dispatch(transactionDiscovered("TopUp", event.id, event.transactionHash, false, values.from, walletAddress, values.value));
+      dispatch<any>(loadBlock(event.blockNumber));
+      switch (event.event) {
+        case "TopUp":
+          dispatch(transactionDiscovered("TopUp", event.id, event.blockNumber, event.transactionHash, false, values.from, walletAddress, values.value));
+          break;
+        case "NewPaymentRequest":
+          dispatch(transactionDiscovered("NewPaymentRequest", event.id, event.blockNumber, event.transactionHash, false, walletAddress, values.to, values.amount));
+          break;
+      }
     });
     dispatch(transactionsLoaded());
-  }).catch(error => {
-    //FIXME: handle error
-    console.log("error", error)
-  });
-
-  wallet.getPastEvents('NewPaymentRequest', {fromBlock: 0, toBlock: 'latest'}).then((events: any) => {
-    //FIXME: add loading event
-    //FIXME: use the right type for event
-    events.forEach((event: any) => {
-      const values = event.returnValues;
-      dispatch(transactionDiscovered("NewPaymentRequest", event.id, event.transactionHash, false, walletAddress, values.to, values.amount));
-    });
-    // dispatch(transactionsLoaded());
   }).catch(error => {
     //FIXME: handle error
     console.log("error", error)
@@ -117,13 +115,13 @@ export const loadTransactions = (web3: Web3, dispatch: Dispatch, getState: () =>
   web3.eth.getBlockNumber().then((blockNumber: number) => {
     wallet.events.TopUp({fromBlock: blockNumber}).on('data', (event: any) => {
       const values = event.returnValues;
-      dispatch(transactionDiscovered("TopUp", event.id, event.transactionHash, true, values.from, walletAddress, values.value));
+      dispatch(transactionDiscovered("TopUp", event.id, event.blockNumber, event.transactionHash, true, values.from, walletAddress, values.value));
       watchPendingTransaction(web3, dispatch, walletAddress, wallet, event.transactionHash);
     })
 
     wallet.events.NewPaymentRequest({fromBlock: blockNumber}).on('data', (event: any) => {
       const values = event.returnValues;
-      dispatch(transactionDiscovered("NewPaymentRequest", event.id, event.transactionHash, true, walletAddress, values.to, values.amount));
+      dispatch(transactionDiscovered("NewPaymentRequest", event.id, event.blockNumber, event.transactionHash, true, walletAddress, values.to, values.amount));
       watchPendingTransaction(web3, dispatch, walletAddress, wallet, event.transactionHash);
     })
   });

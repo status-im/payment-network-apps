@@ -1,6 +1,6 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import TransactionsListItem from '../components/TransactionsListItem';
+import TransactionsListItem from '../containers/TransactionsListItem';
 import { Props } from '../containers/TransactionsList';
 import List from '@material-ui/core/List';
 import CircularProgress from '@material-ui/core/CircularProgress';
@@ -41,48 +41,11 @@ const WalletsList = (props: Props) => {
     </div>}
     {!props.loading && <List>
       {props.transactions.map((tx) => (
-        <TransactionsListItem key={tx.id}
-          pending={tx.pending}
-          event={tx.event}
-          from={tx.from}
-          to={tx.to}
-          valueInETH={tx.valueInETH}
-          transactionHash={tx.transactionHash} />
+        <TransactionsListItem key={tx.id} id={tx.id} />
       ))}
     </List>}
   </>
   )
-  // return (<React.Fragment>
-  //   {loading && <div style={styles.loading}>
-  //     <Typography variant="caption" color="inherit">
-  //       loading {loadedWalletsCount + 1} of {walletsCount} wallets...
-  //     </Typography>
-  //   </div>}
-
-  //   {!wrongNetwork && countingWallets && <div style={styles.loading}>
-  //     <Typography variant="caption" color="inherit">
-  //       counting wallets...
-  //     </Typography>
-  //   </div>}
-
-  //   {wrongNetwork && <div style={styles.wrongNetwork}>
-  //     Wrong network. Please connect to {VALID_NETWORK_NAME}.
-  //   </div>}
-
-  //   <List>
-  //     {transactions.map((tx) => (
-  //       <TransactionsListItem key={tx.address} wallet={wallet} />
-  //     ))}
-  //   </List>
-
-  //   {!wrongNetwork && <Fab color="secondary"
-  //     aria-label="Add"
-  //     style={styles.addButton}
-  //     onClick={ () => onPlusClick() }>
-  //     <AddIcon />
-  //   </Fab>}
-  // </React.Fragment>
-  // )
 };
 
 export default WalletsList;

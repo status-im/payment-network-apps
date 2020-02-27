@@ -3,16 +3,10 @@ import { RootState } from '../reducers';
 import { Dispatch } from 'redux';
 import TransactionsList from '../components/TransactionsList';
 import { TransactionState } from '../reducers/transactions';
-import {
-  VALID_NETWORK_ID,
-  LOCAL_NETWORK_ID,
-} from '../actions/web3';
 
 export interface StateProps {
   loading: boolean
   transactions: TransactionState[]
-  networkID: number | undefined
-  wrongNetwork: boolean
 }
 
 export interface DispatchProps {
@@ -24,15 +18,11 @@ const newProps = (): Props => {
   return {
     loading: false,
     transactions: [],
-    networkID: undefined,
-    wrongNetwork: false,
   }
 }
 
 const mapStateToProps = (state: RootState): StateProps => {
   const props = newProps();
-  props.loading = state.transactions.loading;
-  props.networkID = state.web3.networkID;
 
   const transactions: TransactionState[] = [];
   if (!props.loading) {
@@ -43,8 +33,8 @@ const mapStateToProps = (state: RootState): StateProps => {
 
   return {
     ...props,
+    loading: state.transactions.loading,
     transactions: transactions,
-    wrongNetwork: props.networkID !== undefined && (props.networkID !== VALID_NETWORK_ID && props.networkID !== LOCAL_NETWORK_ID),
   }
 };
 
