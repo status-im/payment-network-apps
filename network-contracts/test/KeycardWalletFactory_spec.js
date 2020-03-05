@@ -7,7 +7,7 @@ let owner, owner2;
 
 config({
   contracts: {
-    KeycardWalletFactory: {}
+    KeycardWalletFactory: {args:["0x00000000000000000000000000000000000000ff"]}
   }
 }, (err, _accounts) => {
   owner = _accounts[0];
@@ -19,7 +19,7 @@ contract('KeycardWalletFactory', () => {
   it ('create', async () => {
     const keycard = "0x0000000000000000000000000000000000000001";
 
-    const create = KeycardWalletFactory.methods.create(keycard, {maxTxValue: 999, minBlockDistance: 1}, false, "0x0000000000000000000000000000000000000000", 0);
+    const create = KeycardWalletFactory.methods.create(keycard, false, 1, 0);
     const receipt = await create.send({
       from: owner
     });
@@ -36,7 +36,7 @@ contract('KeycardWalletFactory', () => {
     const keycard = "0x0000000000000000000000000000000000000002";
     assert.equal(await KeycardWalletFactory.methods.countWalletsForOwner(keycard).call(), 0);
 
-    const create = KeycardWalletFactory.methods.create(keycard, {maxTxValue: 999, minBlockDistance: 1}, true, "0x0000000000000000000000000000000000000000", 0);
+    const create = KeycardWalletFactory.methods.create(keycard, true, 1, 0);
     const receipt = await create.send({
       from: owner
     });
@@ -54,7 +54,7 @@ contract('KeycardWalletFactory', () => {
     const keycard = "0x0000000000000000000000000000000000000002";
 
     try {
-      const create = KeycardWalletFactory.methods.create(keycard, {maxTxValue: 999, minBlockDistance: 1}, false, "0x0000000000000000000000000000000000000000", 0);
+      const create = KeycardWalletFactory.methods.create(keycard, false, 1, 0);
       const receipt = await create.send({
         from: owner2
       });
