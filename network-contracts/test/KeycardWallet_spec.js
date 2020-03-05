@@ -35,7 +35,7 @@ async function signPaymentRequest(signer, message) {
   let domainData = {
     name: "KeycardWallet",
     version: "1",
-    chainId: 1,
+    chainId: 3,
     verifyingContract: KeycardWalletFactory.options.address
   };
 
@@ -331,7 +331,7 @@ contract('KeycardWallet', () => {
       gas: estimatedGas
     });
 
-    const event = receipt.events.PaymentRequest;
+    const event = receipt.events.NewPayment;
     assert.equal(event.returnValues.blockNumber, block.number);
     assert.equal(event.returnValues.to, to);
     assert.equal(event.returnValues.amount, value);
