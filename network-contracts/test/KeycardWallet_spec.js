@@ -1,5 +1,5 @@
 const KeycardWallet = require('Embark/contracts/KeycardWallet');
-const KeycardWalletFactory = require('Embark/contracts/KeycardWallet');
+const KeycardWalletFactory = require('Embark/contracts/KeycardWalletFactory');
 const MockERC20 = require('Embark/contracts/MockERC20');
 const { getErrorReason } = require('./utils');
 
@@ -35,8 +35,8 @@ async function signPaymentRequest(signer, message) {
   let domainData = {
     name: "KeycardWallet",
     version: "1",
-    chainId: 1,
-    verifyingContract: KeycardWalletFactory.address
+    chainId: 3,
+    verifyingContract: KeycardWalletFactory.options.address
   };
 
   let data = {
@@ -52,15 +52,10 @@ async function signPaymentRequest(signer, message) {
   return promisifyJsonRPC(cb => web3.currentProvider.sendAsync({method: "eth_signTypedData", params: [signer, data], from: signer}, cb));
 }
 
-let owner,
-  merchant;
+let owner, merchant, keycard;
 
 config({
   contracts: {
-    KeycardWallet: {
-      args: [zeroAddress, zeroAddress, {maxTxValue: 0, minBlockDistance: 0}, zeroAddress, zeroAddress, 0]
-    },
-    KeycardWalletFactory: {},
     MockERC20: {}
   }
 }, (err, _accounts) => {
@@ -71,36 +66,30 @@ config({
 });
 
 contract('KeycardWallet', () => {
+  before(async () => {
+    let tmp = await KeycardWalletFactory.deploy({arguments: [MockERC20.address]}).send({from: owner});
+    KeycardWalletFactory.options.address = tmp.options.address;
+
+    const create = KeycardWalletFactory.methods.create(zeroAddress, false, 0, 0);
+    const receipt = await create.send({from: owner});
+
+    const event = receipt.events.NewWallet;
+    KeycardWallet.options.address = event.returnValues.wallet;
+  });
 
   it('registers', async () => {
-    const setRegister = KeycardWallet.methods.setRegister(KeycardWalletFactory.address);
+    const setRegister = KeycardWallet.methods.setRegister(KeycardWalletFactory.options.address);
     await setRegister.send({
       from: owner
     });
-  });
 
-  it('add balance', async () => {
-    const contractBalanceBefore = await web3.eth.getBalance(KeycardWallet.address);
-    assert.equal(contractBalanceBefore, 0);
-
-    const value = 100;
-    const nonce = await web3.eth.getTransactionCount(owner);
-
-    const tx = {
-      from: owner,
-      to: KeycardWallet.address,
-      nonce: nonce,
-      value: value,
-    };
-
-    const res = await web3.eth.sendTransaction(tx);
-    const contractBalanceAfter = await web3.eth.getBalance(KeycardWallet.address);
-    assert.equal(contractBalanceAfter, value);
+    const currentRegister = await KeycardWallet.methods.register().call();
+    assert.equal(currentRegister, KeycardWalletFactory.options.address);
   });
 
   it('requestPayment without setting a keycard address', async () => {
     const block = await web3.eth.getBlock("latest");
-    const requestPayment = KeycardWallet.methods.requestPayment({blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: 0, to: merchant}, "0x00");
+    const requestPayment = KeycardWallet.methods.requestPayment({blockNumber: block.number, blockHash: block.hash, currency: MockERC20.address, amount: 0, to: merchant}, "0x00");
     try {
       const estimatedGas = await requestPayment.estimateGas();
       await requestPayment.send({
@@ -143,9 +132,9 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 10;
 
-    const message = {blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: value, to: to};
+    const message = {blockNumber: block.number, blockHash: block.hash, currency: MockERC20.address, amount: value, to: to};
     // message is signed by the merchant
-    const sig = await signPaymentRequest(merchant, message)
+    const sig = await signPaymentRequest(merchant, message);
     const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
 
     try {
@@ -158,9 +147,6 @@ contract('KeycardWallet', () => {
     } catch (err) {
       assert.equal(getErrorReason(err), "signer is not the keycard");
     }
-
-    const pendingWithdrawal = await KeycardWallet.methods.pendingWithdrawals(merchant).call();
-    assert.equal(pendingWithdrawal, 0);
   });
 
   it('requestPayment with block in the future', async () => {
@@ -169,8 +155,8 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 10;
 
-    const message = {blockNumber: block.number + 1, blockHash: "0x0000000000000000000000000000000000000000000000000000000000000000", currency: zeroAddress, amount: value, to: to};
-    const sig = await signPaymentRequest(keycard, message)
+    const message = {blockNumber: block.number + 1, blockHash: "0x0000000000000000000000000000000000000000000000000000000000000000", currency: MockERC20.address, amount: value, to: to};
+    const sig = await signPaymentRequest(keycard, message);
     const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
 
     try {
@@ -183,9 +169,6 @@ contract('KeycardWallet', () => {
     } catch (err) {
       assert.equal(getErrorReason(err), "transaction cannot be in the future");
     }
-
-    const pendingWithdrawal = await KeycardWallet.methods.pendingWithdrawals(merchant).call();
-    assert.equal(pendingWithdrawal, 0);
   });
 
   it('requestPayment with wrong block hash', async () => {
@@ -194,7 +177,7 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 10;
 
-    const message = {blockNumber: block.number, blockHash: "0x0000000000000000000000000000000000000000000000000000000000000000", currency: zeroAddress, amount: value, to: to};
+    const message = {blockNumber: block.number, blockHash: "0x0000000000000000000000000000000000000000000000000000000000000000", currency: MockERC20.address, amount: value, to: to};
     const sig = await signPaymentRequest(keycard, message)
     const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
 
@@ -208,9 +191,6 @@ contract('KeycardWallet', () => {
     } catch (err) {
       assert.equal(getErrorReason(err), "invalid block hash");
     }
-
-    const pendingWithdrawal = await KeycardWallet.methods.pendingWithdrawals(merchant).call();
-    assert.equal(pendingWithdrawal, 0);
   });
 
   it('requestPayment with params different from signed params', async () => {
@@ -218,9 +198,9 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 10;
 
-    const badMessage = {blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: value + 1, to: to};
+    const badMessage = {blockNumber: block.number, blockHash: block.hash, currency: MockERC20.address, amount: value + 1, to: to};
 
-    const message = {blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: value, to: to};
+    const message = {blockNumber: block.number, blockHash: block.hash, currency: MockERC20.address, amount: value, to: to};
     const sig = await signPaymentRequest(keycard, message)
     const requestPayment = KeycardWallet.methods.requestPayment(badMessage, sig);
 
@@ -234,37 +214,31 @@ contract('KeycardWallet', () => {
     } catch (err) {
       assert.equal(getErrorReason(err), "signer is not the keycard");
     }
-
-
-    const pendingWithdrawal = await KeycardWallet.methods.pendingWithdrawals(merchant).call();
-    assert.equal(pendingWithdrawal, 0);
   });
 
-  it('setSettings needs to be called by the owner', async () => {
-    const setSettings = KeycardWallet.methods.setSettings({maxTxValue: 999, minBlockDistance: 1});
+  it('setMinBlockDistance needs to be called by the owner', async () => {
+    const setMinBlockDistance = KeycardWallet.methods.setMinBlockDistance(1);
     try {
-      const receipt = await setSettings.send({
+      const receipt = await setMinBlockDistance.send({
         from: merchant
       });
-      assert.fail("setSettings should have failed");
+      assert.fail("setMinBlockDistance should have failed");
     } catch (err) {
       assert.equal(getErrorReason(err), "owner required");
     }
   });
 
-  it('setSettings called by the owner', async () => {
-    const settingsBefore = await KeycardWallet.methods.settings().call();
-    assert.equal(settingsBefore.maxTxValue, 0);
-    assert.equal(settingsBefore.minBlockDistance, 0);
+  it('setMinBlockDistance called by the owner', async () => {
+    const minBlockDistanceBefore = await KeycardWallet.methods.minBlockDistance().call();
+    assert.equal(minBlockDistanceBefore, 0);
 
-    const setSettings = KeycardWallet.methods.setSettings({maxTxValue: 999, minBlockDistance: 1});
-    await setSettings.send({
+    const setMinBlockDistance = KeycardWallet.methods.setMinBlockDistance(1);
+    await setMinBlockDistance.send({
       from: owner
     });
 
-    const currentSettings = await KeycardWallet.methods.settings().call();
-    assert.equal(currentSettings.maxTxValue, 999);
-    assert.equal(currentSettings.minBlockDistance, 1);
+    const currentMinBlockDistance = await KeycardWallet.methods.minBlockDistance().call();
+    assert.equal(currentMinBlockDistance, 1);
   });
 
   it('requestPayment with token not in the whitelist', async () => {
@@ -272,7 +246,7 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 1;
 
-    const message = {blockNumber: block.number, blockHash: block.hash, currency: MockERC20.address, amount: value, to: to};
+    const message = {blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: value, to: to};
     const sig = await signPaymentRequest(keycard, message)
     const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
 
@@ -300,27 +274,6 @@ contract('KeycardWallet', () => {
     assert.equal(tokenMaxTxAmount, maxTxValue);
   });
 
-  it('requestPayment with value greater than maxTxValue', async () => {
-    const block = await web3.eth.getBlock("latest");
-    const to = merchant;
-    const value = 1000;
-
-    const message = {blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: value, to: to};
-    const sig = await signPaymentRequest(keycard, message)
-    const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
-
-    try {
-      const estimatedGas = await requestPayment.estimateGas();
-      const receipt = await requestPayment.send({
-        from: merchant,
-        gas: estimatedGas
-      });
-     assert.fail("requestPayment should have failed");
-    } catch (err) {
-      assert.equal(getErrorReason(err), "amount not allowed");
-    }
-  });
-
   it('requestPayment with value greater than maxTxValue for ERC20 token', async () => {
     const block = await web3.eth.getBlock("latest");
     const to = merchant;
@@ -341,27 +294,6 @@ contract('KeycardWallet', () => {
       assert.equal(getErrorReason(err), "amount not allowed");
     }
   }); 
-
-  it('requestPayment with value greater than balance', async () => {
-    const block = await web3.eth.getBlock("latest");
-    const to = merchant;
-    const value = 101;
-
-    const message = {blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: value, to: to};
-    const sig = await signPaymentRequest(keycard, message)
-    const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
-
-    try {
-      const estimatedGas = await requestPayment.estimateGas();
-      const receipt = await requestPayment.send({
-        from: merchant,
-        gas: estimatedGas
-      });
-     assert.fail("requestPayment should have failed");
-    } catch (err) {
-      assert.equal(getErrorReason(err), "balance is not enough");
-    }
-  });
 
   it('requestPayment with value greater than balance for ERC20', async () => {
     const block = await web3.eth.getBlock("latest");
@@ -384,38 +316,7 @@ contract('KeycardWallet', () => {
     }
   });  
 
-  it('requestPayment', async () => {
-    const block = await web3.eth.getBlock("latest");
-    const to = merchant;
-    const value = 10;
-
-    const message = {blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: value, to: to};
-    const sig = await signPaymentRequest(keycard, message)
-    const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
-
-    const estimatedGas = await requestPayment.estimateGas();
-    const receipt = await requestPayment.send({
-      from: merchant,
-      gas: estimatedGas
-    });
-
-    const event = receipt.events.NewPaymentRequest;
-    assert.equal(event.returnValues.blockNumber, block.number);
-    assert.equal(event.returnValues.to, to);
-    assert.equal(event.returnValues.amount, value);
-
-    const pendingWithdrawal = await KeycardWallet.methods.pendingWithdrawals(merchant).call();
-    assert.equal(pendingWithdrawal, value);
-
-    const totalPendingWithdrawal = await KeycardWallet.methods.totalPendingWithdrawals().call();
-    assert.equal(totalPendingWithdrawal, value);
-  });
-
   it('requestPayment with ERC20', async () => {
-    // skip a block for test
-    const setSettings = KeycardWallet.methods.setSettings({maxTxValue: 999, minBlockDistance: 1});
-    await setSettings.send({from: owner});
-
     const block = await web3.eth.getBlock("latest");
     const to = merchant;
     const value = 10;
@@ -430,16 +331,11 @@ contract('KeycardWallet', () => {
       gas: estimatedGas
     });
 
-    const event = receipt.events.NewPaymentRequest;
+    const event = receipt.events.NewPayment;
     assert.equal(event.returnValues.blockNumber, block.number);
     assert.equal(event.returnValues.to, to);
     assert.equal(event.returnValues.amount, value);
-
-    const pendingWithdrawal = await KeycardWallet.methods.pendingWithdrawals(merchant).call();
-    assert.equal(pendingWithdrawal, value);
-
-    const totalPendingWithdrawal = await KeycardWallet.methods.totalPendingWithdrawals().call();
-    assert.equal(totalPendingWithdrawal, value);
+    assert.equal(event.returnValues.currency, MockERC20.address);
   });  
 
   it('requestPayment without waiting for cooldown', async () => {
@@ -447,7 +343,7 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 1;
 
-    const message = {blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: value, to: to};
+    const message = {blockNumber: block.number, blockHash: block.hash, currency: MockERC20.address, amount: value, to: to};
     const sig = await signPaymentRequest(keycard, message)
     const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
 
@@ -464,36 +360,8 @@ contract('KeycardWallet', () => {
     }
 
     // skip a block for next test
-    const setSettings = KeycardWallet.methods.setSettings({maxTxValue: 999, minBlockDistance: 1});
-    await setSettings.send({from: owner});
-  });
-
-  it('requestPayment with value greater than available balance', async () => {
-    const block = await web3.eth.getBlock("latest");
-    const to = merchant;
-    const value = 100;
-
-    const totalBalance = await web3.eth.getBalance(KeycardWallet.address);
-    assert.equal(totalBalance, value);
-
-    const totalPendingWithdrawal = await KeycardWallet.methods.totalPendingWithdrawals().call();
-    assert.equal(totalPendingWithdrawal, 10);
-
-    const message = {blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: value, to: to};
-    const sig = await signPaymentRequest(keycard, message)
-    const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
-
-    try {
-      const estimatedGas = await requestPayment.estimateGas();
-      const receipt = await requestPayment.send({
-        from: merchant,
-        gas: estimatedGas
-      });
-
-      assert.fail("requestPayment should have failed");
-    } catch (err) {
-      assert.equal(getErrorReason(err), "balance is not enough");
-    }
+    const setMinBlockDistance = KeycardWallet.methods.setMinBlockDistance(1);
+    await setMinBlockDistance.send({from: owner});
   });
 
   it('requestPayment with old block', async () => {
@@ -502,7 +370,7 @@ contract('KeycardWallet', () => {
     const to = merchant;
     const value = 1;
 
-    const message = {blockNumber: block.number, blockHash: block.hash, currency: zeroAddress, amount: value, to: to};
+    const message = {blockNumber: block.number, blockHash: block.hash, currency: MockERC20.address, amount: value, to: to};
     const sig = await signPaymentRequest(keycard, message)
     const requestPayment = KeycardWallet.methods.requestPayment(message, sig);
 
@@ -519,58 +387,7 @@ contract('KeycardWallet', () => {
     }
 
     // skip a block for next test
-    const setSettings = KeycardWallet.methods.setSettings({maxTxValue: 999, minBlockDistance: 1});
-    await setSettings.send({from: owner});
+    const setMinBlockDistance = KeycardWallet.methods.setMinBlockDistance(1);
+    await setMinBlockDistance.send({from: owner});
   });    
-
-  it('withdraw from address without pendingWithdrawal', async () => {
-    const pendingWithdrawalBefore = await KeycardWallet.methods.pendingWithdrawals(thief).call();
-    assert.equal(pendingWithdrawalBefore, 0);
-
-    const withdraw = KeycardWallet.methods.withdraw();
-    try {
-      const receipt = await withdraw.send({ from: thief });
-      assert.fail("withdraw should have failed");
-    } catch (err) {
-      assert.equal(getErrorReason(err), "no pending withdrawal");
-    }
-  });
-
-  it('withdraw', async () => {
-    const withdrawalValue = 10;
-    const merchantBalanceBefore = await web3.eth.getBalance(merchant);
-    const pendingWithdrawalBefore = await KeycardWallet.methods.pendingWithdrawals(merchant).call();
-    assert.equal(pendingWithdrawalBefore, withdrawalValue);
-
-    const withdraw = KeycardWallet.methods.withdraw();
-    const receipt = await withdraw.send({ from: merchant });
-    const event = receipt.events.NewWithdrawal;
-    assert.equal(event.returnValues.to, merchant);
-    assert.equal(event.returnValues.value, withdrawalValue);
-
-    const gasPrice = await web3.eth.getGasPrice();
-    const fullTxPrice = (new web3.utils.BN(gasPrice)).mul(new web3.utils.BN(receipt.gasUsed));
-
-    const pendingWithdrawalAfter = await KeycardWallet.methods.pendingWithdrawals(merchant).call();
-    assert.equal(pendingWithdrawalAfter, 0);
-
-    const totalPendingWithdrawalAfter = await KeycardWallet.methods.totalPendingWithdrawals().call();
-    assert.equal(totalPendingWithdrawalAfter, 0);
-
-    const expectedMerchantBalance = (new web3.utils.BN(merchantBalanceBefore)).sub(fullTxPrice).add(new web3.utils.BN(withdrawalValue));
-    const merchantBalanceAfter = await web3.eth.getBalance(merchant);
-    assert.deepStrictEqual(new web3.utils.BN(merchantBalanceAfter), expectedMerchantBalance);
-  });
-
-  it('withdraw error on 0 pendingWithdrawal', async () => {
-    const pendingWithdrawal = await KeycardWallet.methods.pendingWithdrawals(merchant).call();
-    assert.equal(pendingWithdrawal, 0);
-
-    try {
-      await KeycardWallet.methods.withdraw().send({ from: merchant });
-      assert.fail("withdraw should have failed");
-    } catch(err) {
-      assert.equal(getErrorReason(err), "no pending withdrawal");
-    }
-  });
 });

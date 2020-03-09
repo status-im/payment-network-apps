@@ -37,7 +37,7 @@ Other options are
 
 `--passfile`: the path to a file storing the password for the JSON encoded private key. Always used with --account.
 
-`--maxTxValue`: the maxTxValue for payment transaction. This can be changed later but providing a meaningful value on creation can be convenient. Defaults to 100000000.
+`--tokenMaxTxValue`: the tokenMaxTxValue for payment transaction. This can be changed later but providing a meaningful value on creation can be convenient. Defaults to 100000000.
 
 `--minBlockDistance`: how many blocks must elapse between two consecutive payments. This solves the possible attack of having the Keycard sign several transactions at once. The higher the value, the more time must pass between transactions. This can be changed later too. Defaults to 5.
 

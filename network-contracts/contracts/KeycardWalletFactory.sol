@@ -7,20 +7,22 @@ import "./KeycardRegistry.sol";
 contract KeycardWalletFactory is KeycardRegistry {
   mapping(address => address[]) public ownersWallets;
   mapping(address => address) public keycardsWallets;
+  address public currency;
 
-  event NewWallet(
-    KeycardWallet wallet
-  );
+  event NewWallet(KeycardWallet wallet);
 
-  function create(address keycard, KeycardWallet.Settings memory settings, bool keycardIsOwner,
-      address optToken, uint256 optTokenMaxTxAmount) public {
-    address owner = keycardIsOwner ? keycard : msg.sender;
+  constructor(address _currency) public {
+    currency = _currency;
+  }
 
-    require(keycardsWallets[keycard] == address(0), "the keycard is already associated to a wallet");
+  function create(address _keycard, bool _keycardIsOwner, uint256 _minBlockDistance, uint256 _txMaxAmount) public {
+    address owner = _keycardIsOwner ? _keycard : msg.sender;
 
-    KeycardWallet wallet = new KeycardWallet(owner, keycard, settings, address(this), optToken, optTokenMaxTxAmount);
+    require(keycardsWallets[_keycard] == address(0), "the keycard is already associated to a wallet");
+
+    KeycardWallet wallet = new KeycardWallet(owner, _keycard, address(this), _minBlockDistance, currency, _txMaxAmount);
     ownersWallets[owner].push(address(wallet));
-    keycardsWallets[keycard] = address(wallet);
+    keycardsWallets[_keycard] = address(wallet);
     emit NewWallet(wallet);
   }
 
