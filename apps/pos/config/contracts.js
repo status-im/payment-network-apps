@@ -57,7 +57,7 @@ module.exports = {
     // filteredFields: [],
 
     contracts: {
-      KeycardWalletFactory: {},
+      KeycardWalletFactory: {args: ["0xc55cF4B03948D7EBc8b9E8BAD92643703811d162"]},
     }
   },
 
@@ -79,11 +79,23 @@ module.exports = {
   // merges with the settings in default
   // used with "embark run testnet"
   testnet: {
+    contracts: {
+      KeycardWalletFactory: {
+        address: "0x37491bee77c66cb1c4c2be92e4ba3a9eb5487801",
+        deploy: false
+      }
+    }
   },
 
   // merges with the settings in default
   // used with "embark run livenet"
   livenet: {
+    contracts: {
+      KeycardWalletFactory: {
+        address: "0x37491bee77c66cb1c4c2be92e4ba3a9eb5487801",
+        deploy: false
+      }
+    }   
   },
 
   // you can name an environment with specific settings and then specify with
