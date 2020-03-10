@@ -1,11 +1,14 @@
 import EmbarkJS from 'Embark/EmbarkJS';
 import KeycardWalletFactory from 'Embark/contracts/KeycardWalletFactory';
 import KeycardWallet from 'Embark/contracts/KeycardWallet';
+import IERC20 from 'Embark/contracts/IERC20';
+
 import { emptyAddress } from '../utils';
 import { recoverTypedSignature } from 'eth-sig-util';
 import ethUtil from 'ethereumjs-util';
 
 const addressZero = "0x0000000000000000000000000000000000000000";
+const tokenAddress = "0xc55cF4B03948D7EBc8b9E8BAD92643703811d162";
 
 export const NEW_WALLET = 'NEW_WALLET';
 export const newWallet = () => ({
@@ -240,10 +243,16 @@ export const loadWallet = (walletAddress, message, sig) => {
     });
     walletContract.address = walletAddress;
 
-    const balance = await walletContract.methods.availableBalance().call();
-    const settings = await walletContract.methods.settings().call();
+    const erc20Contract = new EmbarkJS.Blockchain.Contract({
+      abi: IERC20.options.jsonInterface,
+      address: tokenAddress,
+    });
+    erc20Contract.address = tokenAddress;
 
-    dispatch(walletLoaded(balance, settings.maxTxValue))
+    const balance = await erc20Contract.methods.balanceOf(walletAddress).call();
+    const maxTxValue = await walletContract.methods.tokenMaxTxAmount(tokenAddress).call();
+
+    dispatch(walletLoaded(balance, maxTxValue))
     dispatch(sendPaymentRequest(walletContract, message, sig))
   };
 }
@@ -298,7 +307,7 @@ export const requestPayment = () => {
     const message = {
       blockNumber: block.number,
       blockHash: block.hash,
-      currency: "0xc55cF4B03948D7EBc8b9E8BAD92643703811d162",
+      currency: tokenAddress,
       to: state.owner,
       amount: state.txAmount,
     }
