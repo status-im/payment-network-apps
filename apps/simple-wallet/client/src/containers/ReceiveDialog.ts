@@ -7,6 +7,7 @@ import { hideWalletQRCode } from '../actions/wallet';
 
 export interface StateProps {
   open: boolean
+  tokenSymbol: string | undefined
   address: string | undefined
   networkID: number | undefined
 }
@@ -20,6 +21,7 @@ export type Props = StateProps & DispatchProps;
 const mapStateToProps = (state: RootState): StateProps => {
   return {
     open: state.wallet.showWalletQRCode,
+    tokenSymbol: state.wallet.erc20Symbol,
     address: state.wallet.walletAddress,
     networkID: state.web3.networkID,
   }

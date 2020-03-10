@@ -2,7 +2,6 @@ import { Dispatch } from 'redux';
 import { RootState } from '../reducers';
 import Web3 from 'web3';
 import { abi as keycardWalletFactoryABI } from '../contracts/KeycardWalletFactory';
-import { abi as keycardWalletABI } from '../contracts/KeycardWallet';
 import { abi as erc20DetailedABI } from '../contracts/ERC20Detailed';
 import { isEmptyAddress } from '../utils';
 import { loadTransactions } from './transactions';
@@ -217,6 +216,7 @@ export const loadWallet = async (web3: Web3, dispatch: Dispatch, getState: () =>
     .then(() => dispatch<any>(loadERC20(web3, factory)))
     .then((erc20: Contract) => dispatch<any>(loadERC20Symbol(web3, erc20)))
     .then((erc20: Contract) => dispatch<any>(loadWalletBalance(web3, erc20)))
+    .then((erc20: Contract) => dispatch<any>(loadTransactions(web3, erc20)))
     .catch((err: string) => {
       console.error("global catch", err)
       return;
@@ -244,21 +244,6 @@ const loadWalletAddress = (web3: Web3, factory: Contract, keycardAddress: string
     });
   }
 }
-
-
-//export const loadBalance = (web3: Web3, walletAddress: string, wallet: Contract) => {
-//  return async (dispatch: Dispatch) => {
-//    dispatch(loadingWalletBalance(walletAddress));
-//    try {
-//      // const balance = await web3.eth.getBalance(walletAddress);
-//      // const availableBalance = await wallet.methods.availableBalance().call();
-//      dispatch(balanceLoaded("0", "0"));
-//    } catch (err) {
-//      //FIXME: manage error
-//      console.error(err)
-//    }
-//  }
-//}
 
 const loadERC20 = (web3: Web3, factory: Contract) => {
   return async (dispatch: Dispatch) => {
@@ -300,6 +285,7 @@ const loadWalletBalance = (web3: Web3, erc20: Contract) => {
     dispatch(loadingWalletBalance(address));
     return erc20.methods.balanceOf(address).call().then((balance: string) => {
       dispatch(balanceLoaded(balance, balance));
+      return erc20;
     }).catch((err: string) => {
       console.error("err", err)
       throw({

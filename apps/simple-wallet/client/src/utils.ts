@@ -7,3 +7,14 @@ export const compressedAddress = (a: string, padding: number = 4) => {
 export const isEmptyAddress = (a: string) =>
   a === emptyAddress;
 
+export const addPadding = (n: number, hex: string) => {
+  if (hex.startsWith("0x")) {
+    hex = hex.slice(2);
+  }
+
+  for (let i = hex.length; i < n; i++) {
+    hex = `0${hex}`;
+  }
+
+  return `0x${hex}`;
+};
