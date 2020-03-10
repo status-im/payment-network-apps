@@ -298,7 +298,7 @@ export const requestPayment = () => {
     const message = {
       blockNumber: block.number,
       blockHash: block.hash,
-      currency: "0x0000000000000000000000000000000000000000",
+      currency: "0xc55cF4B03948D7EBc8b9E8BAD92643703811d162",
       to: state.owner,
       amount: state.txAmount,
     }
