@@ -6,6 +6,7 @@ import TopPanel from '../components/TopPanel';
 import { showWalletQRCode } from '../actions/wallet';
 
 export interface StateProps {
+  tokenSymbol: string | undefined
   balance: string | undefined
   availableBalance: string | undefined
 }
@@ -19,6 +20,7 @@ export type Props = StateProps & DispatchProps;
 const mapStateToProps = (state: RootState): StateProps => {
   return {
     balance: state.wallet.balance,
+    tokenSymbol: state.wallet.erc20Symbol,
     availableBalance: state.wallet.availableBalance,
   }
 }

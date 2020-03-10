@@ -48,15 +48,11 @@ const TopPanel = (props: Props) => {
   const classes = useStyles();
 
   const [balance, roundedBalance] = roundEther(props.balance);
-  const [availableBalance, roundedAvailableBalance] = roundEther(props.availableBalance);
 
   return <div className={classes.container}>
     <div>
       <Typography variant="h2" color="inherit">
-        {roundedAvailableBalance} Ξ
-      </Typography>
-      <Typography variant="body1" color="inherit" style={{textAlign: "center"}}>
-        {availableBalance}
+        {roundedBalance} {props.tokenSymbol}
       </Typography>
       <div className={classes.actions}>
         <Button

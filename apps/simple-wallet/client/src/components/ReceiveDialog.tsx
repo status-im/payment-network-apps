@@ -54,7 +54,7 @@ const ReceiveDialog = (props: Props) => {
           onClose={props.handleClose}
           aria-labelledby="alert-dialog-slide-title"
           aria-describedby="alert-dialog-slide-description">
-    <DialogTitle id="alert-dialog-slide-title">Top up your wallet</DialogTitle>
+    <DialogTitle id="alert-dialog-slide-title">Send only {props.tokenSymbol} tokens</DialogTitle>
     <DialogContent className={classes.container}>
       <div>
         <img alt={props.address} className={classes.qrcode} ref={image} />
