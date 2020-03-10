@@ -3,7 +3,7 @@ import { RootState } from '../reducers';
 import { Contract } from 'web3-eth-contract';
 import Web3 from 'web3';
 import { TransactionReceipt } from 'web3-core';
-import { loadBalance } from './wallet';
+// import { loadBalance } from './wallet';
 import { loadBlock } from './blocks';
 
 export const TXS_LOADING = "TXS_LOADING";
@@ -71,7 +71,7 @@ export const watchPendingTransaction = (web3: Web3, dispatch: Dispatch, walletAd
     if (tx.status) {
       dispatch(transactionConfirmed(transactionHash));
       if (walletAddress !== undefined) {
-        dispatch<any>(loadBalance(web3, walletAddress, wallet));
+        // dispatch<any>(loadBalance(web3, walletAddress, wallet));
       }
       return;
     }

@@ -2,6 +2,8 @@ import {
   WalletActions,
   WALLET_KEYCARD_ADDRESS_NOT_SPECIFIED,
   WALLET_INVALID_KEYCARD_ADDRESS,
+  WALLET_FACTORY_ERC20_ADDRESS_LOADED,
+  WALLET_FACTORY_ERC20_SYMBOL_LOADED,
   WALLET_FACTORY_LOADING_WALLET_ADDRESS,
   WALLET_FACTORY_KEYCARD_NOT_FOUND,
   WALLET_FACTORY_WALLET_ADDRESS_LOADED,
@@ -13,6 +15,8 @@ import {
 export interface WalletState {
   ready: boolean
   loading: boolean
+  erc20Address: string | undefined
+  erc20Symbol: string | undefined
   keycardAddress: string | undefined
   walletAddress: string | undefined
   walletFound: boolean
@@ -25,6 +29,8 @@ export interface WalletState {
 const initialState = {
   ready: false,
   loading: false,
+  erc20Address: undefined,
+  erc20Symbol: undefined,
   keycardAddress: undefined,
   walletAddress: undefined,
   walletFound: false,
@@ -70,6 +76,20 @@ export const walletReducer = (state: WalletState = initialState, action: WalletA
         ...state,
         loading: false,
         error: "not wallet found for the selected Keycard address",
+      }
+    }
+
+    case WALLET_FACTORY_ERC20_ADDRESS_LOADED: {
+      return {
+        ...state,
+        erc20Address: action.address,
+      }
+    }
+
+    case WALLET_FACTORY_ERC20_SYMBOL_LOADED: {
+      return {
+        ...state,
+        erc20Symbol: action.symbol,
       }
     }
 

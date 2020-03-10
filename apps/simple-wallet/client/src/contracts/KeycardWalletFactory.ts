@@ -5,23 +5,73 @@ export const abi: AbiItem[] = [
     "constant": false,
     "inputs": [
       {
-        "name": "name",
-        "type": "bytes3"
-      },
-      {
-        "name": "keycard",
+        "name": "_wallet",
         "type": "address"
       },
       {
-        "name": "maxTxValue",
-        "type": "uint256"
+        "name": "_keycard",
+        "type": "address"
       }
     ],
-    "name": "create",
+    "name": "unregisterFromOwner",
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
-    "type": "function",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "_oldOwner",
+        "type": "address"
+      },
+      {
+        "name": "_newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "setOwner",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "_oldKeycard",
+        "type": "address"
+      },
+      {
+        "name": "_newKeycard",
+        "type": "address"
+      }
+    ],
+    "name": "setKeycard",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "_owner",
+        "type": "address"
+      },
+      {
+        "name": "_keycard",
+        "type": "address"
+      }
+    ],
+    "name": "unregister",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
     "constant": true,
@@ -31,7 +81,7 @@ export const abi: AbiItem[] = [
         "type": "address"
       }
     ],
-    "name": "ownerWalletsCount",
+    "name": "countWalletsForOwner",
     "outputs": [
       {
         "name": "",
@@ -40,7 +90,51 @@ export const abi: AbiItem[] = [
     ],
     "payable": false,
     "stateMutability": "view",
-    "type": "function",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "_keycard",
+        "type": "address"
+      },
+      {
+        "name": "_keycardIsOwner",
+        "type": "bool"
+      },
+      {
+        "name": "_minBlockDistance",
+        "type": "uint256"
+      },
+      {
+        "name": "_txMaxAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "create",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "_owner",
+        "type": "address"
+      },
+      {
+        "name": "_keycard",
+        "type": "address"
+      }
+    ],
+    "name": "register",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
     "constant": true,
@@ -59,7 +153,7 @@ export const abi: AbiItem[] = [
     ],
     "payable": false,
     "stateMutability": "view",
-    "type": "function",
+    "type": "function"
   },
   {
     "constant": true,
@@ -82,7 +176,32 @@ export const abi: AbiItem[] = [
     ],
     "payable": false,
     "stateMutability": "view",
-    "type": "function",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "currency",
+    "outputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "name": "_currency",
+        "type": "address"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "constructor"
   },
   {
     "anonymous": false,
@@ -91,14 +210,9 @@ export const abi: AbiItem[] = [
         "indexed": false,
         "name": "wallet",
         "type": "address"
-      },
-      {
-        "indexed": false,
-        "name": "name",
-        "type": "bytes3"
       }
     ],
     "name": "NewWallet",
-    "type": "event",
+    "type": "event"
   }
 ]
