@@ -32,17 +32,22 @@ const ReceiveDialog = (props: Props) => {
   const image = React.useRef<HTMLImageElement>(null);
 
   useEffect(() => {
-    if (props.address === undefined || props.networkID === undefined || image.current === null) {
+    if (props.tokenAddress === undefined ||
+        props.tokenSymbol === undefined ||
+        props.address === undefined ||
+        props.networkID === undefined ||
+        image.current === null) {
       return;
     }
 
-    var qr = new QRCode();
-    qr.setTypeNumber(5);
-    qr.addData(new QR8BitByte(`ethereum:${props.address}@${props.networkID}`) ); // most useful for usual purpose.
+    const uri = `ethereum:${props.tokenAddress}@${props.networkID}/transfer?address=${props.address}`;
+    const qr = new QRCode();
+    qr.setTypeNumber(6);
+    qr.addData(new QR8BitByte(uri));
     qr.make();
     image.current.src = qr.toDataURL(4);
 
-  }, [props.address, props.networkID]);
+  }, [props.tokenAddress, props.tokenSymbol, props.address, props.networkID, image]);
 
   return <Dialog
           fullWidth={true}
