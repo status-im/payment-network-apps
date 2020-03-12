@@ -12,7 +12,6 @@ export const VALID_NETWORK_ID = 3;
 // export const VALID_NETWORK_ID = 5;
 export const LOCAL_NETWORK_ID = 1337;
 
-
 enum Web3Type {
   Generic,
   Remote,

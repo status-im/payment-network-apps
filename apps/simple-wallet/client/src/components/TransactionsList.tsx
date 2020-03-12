@@ -39,7 +39,8 @@ const WalletsList = (props: Props) => {
     {props.loading && <div className={classes.loading}>
       <CircularProgress className={classes.progress} disableShrink></CircularProgress>
     </div>}
-    {!props.loading && <List>
+
+    {<List>
       {props.transactions.map((tx) => (
         <TransactionsListItem key={tx.id} id={tx.id} />
       ))}

@@ -20,7 +20,7 @@ export interface TransactionState {
 }
 
 export interface TransactionsState {
-  loading: boolean
+  loadingRequests: number
   transactions: {
     [txHash: string]: TransactionState
   }
@@ -39,7 +39,7 @@ const newTransactionState = (): TransactionState => ({
 });
 
 const initialState: TransactionsState = {
-  loading: false,
+  loadingRequests: 0,
   transactions: {},
 };
 
@@ -48,14 +48,14 @@ export const transactionsReducer = (state: TransactionsState = initialState, act
     case TXS_LOADING: {
       return {
         ...state,
-        loading: true,
+        loadingRequests: state.loadingRequests + 1,
       }
     }
 
     case TXS_LOADED: {
       return {
         ...state,
-        loading: false,
+        loadingRequests: state.loadingRequests - 1,
       }
     }
 

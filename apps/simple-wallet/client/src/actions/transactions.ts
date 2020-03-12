@@ -3,7 +3,7 @@ import { RootState } from '../reducers';
 import { Contract } from 'web3-eth-contract';
 import Web3 from 'web3';
 import { TransactionReceipt } from 'web3-core';
-// import { loadBalance } from './wallet';
+import { loadWalletBalance } from './wallet';
 import { loadBlock } from './blocks';
 import { abi as keycardWalletABI } from '../contracts/KeycardWallet';
 import { addPadding } from "../utils";
@@ -68,23 +68,6 @@ export const transactionConfirmed = (transactionHash: string): TxsTransactionCon
   transactionHash,
 });
 
-export const watchPendingTransaction = (web3: Web3, dispatch: Dispatch, walletAddress: string | undefined, wallet: Contract, transactionHash: string) => {
-  web3.eth.getTransactionReceipt(transactionHash).then((tx: TransactionReceipt) => {
-    if (tx.status) {
-      dispatch(transactionConfirmed(transactionHash));
-      if (walletAddress !== undefined) {
-        // dispatch<any>(loadBalance(web3, walletAddress, wallet));
-      }
-      return;
-    }
-
-    window.setTimeout(() => watchPendingTransaction(web3, dispatch, walletAddress, wallet, transactionHash), 5000)
-  }).catch((error: string) => {
-    //FIXME: handle error
-    console.log("error", error)
-  });
-}
-
 export const loadTransactions = (web3: Web3, erc20: Contract) => {
   return (dispatch: Dispatch, getState: () => RootState) => {
     const state = getState();
@@ -93,38 +76,87 @@ export const loadTransactions = (web3: Web3, erc20: Contract) => {
       return;
     }
 
-    const wallet = new web3.eth.Contract(keycardWalletABI, walletAddress);
-    const topic = web3.utils.sha3("Transfer(address,address,uint256)");
+    web3.eth.getBlockNumber().then((blockNumber: number) => {
+      dispatch<any>(getPastTransactions(web3, erc20, walletAddress, blockNumber, "to"))
+      dispatch<any>(getPastTransactions(web3, erc20, walletAddress, blockNumber, "from"))
+
+      dispatch<any>(subscribeToTransactions(web3, erc20, walletAddress, blockNumber, "to"))
+      dispatch<any>(subscribeToTransactions(web3, erc20, walletAddress, blockNumber, "from"))
+    });
+  };
+}
+
+type ToOrFrom = "to" | "from";
+
+const getPastTransactions = (web3: Web3, erc20: Contract, walletAddress: string, fromBlock: number, toOrFrom: ToOrFrom) => {
+  return (dispatch: Dispatch, getState: () => RootState) => {
+    const paddedWalletAddress = addPadding(64, walletAddress);
+    const eventType = toOrFrom == "to" ? "TopUp" : "NewPaymentRequest";
+    const topics: (null | string)[] = [null, null, null];
+
+    switch(toOrFrom) {
+      case "from":
+        topics[1] = paddedWalletAddress;
+        break;
+      case "to":
+        topics[2] = paddedWalletAddress;
+        break;
+    }
+
     const options = {
       fromBlock: 0,
       toBlock: "latest",
-      topics: [
-        topic,
-        null,
-        addPadding(64, walletAddress),
-      ]
+      topics: topics,
     };
 
-    erc20.getPastEvents("allEvents", options).then((events: any) => {
+    dispatch(loadingTransactions());
+    erc20.getPastEvents("Transfer", options).then((events: any) => {
       events.forEach((event: any) => {
         const values = event.returnValues;
         dispatch<any>(loadBlock(event.blockNumber));
-        dispatch(transactionDiscovered("TopUp", event.id, event.blockNumber, event.transactionHash, false, values.from, walletAddress, values.value));
+        dispatch(transactionDiscovered(eventType, event.id, event.blockNumber, event.transactionHash, false, values.from, walletAddress, values.value));
       });
       dispatch(transactionsLoaded());
     });
+  };
+};
 
-    dispatch(loadingTransactions());
-
-    const filter = {
-      to: walletAddress,
+const subscribeToTransactions = (web3: Web3, erc20: Contract, walletAddress: string, fromBlock: number, toOrFrom: ToOrFrom) => {
+  return (dispatch: Dispatch, getState: () => RootState) => {
+    const options = {
+      fromBlock: fromBlock,
+      filter: {
+        [toOrFrom]: walletAddress,
+      }
     };
-    web3.eth.getBlockNumber().then((blockNumber: number) => {
-      erc20.events.Transfer({filter: filter}).on('data', (event: any) => {
-        const values = event.returnValues;
-        dispatch(transactionDiscovered("TopUp", event.id, event.blockNumber, event.transactionHash, true, values.from, walletAddress, values.value));
-        watchPendingTransaction(web3, dispatch, walletAddress, wallet, event.transactionHash);
-      })
+
+    const eventType = toOrFrom == "to" ? "TopUp" : "NewPaymentRequest";
+
+    erc20.events.Transfer(options).on('data', (event: any) => {
+      const values = event.returnValues;
+      const pending = event.blockHash === null;
+      dispatch(transactionDiscovered(eventType, event.id, event.blockNumber, event.transactionHash, pending, values.from, walletAddress, values.value));
+      dispatch<any>(loadWalletBalance(web3, undefined));
+      if (pending) {
+        watchPendingTransaction(web3, dispatch, walletAddress, event.transactionHash);
+      }
     });
   };
+};
+
+export const watchPendingTransaction = (web3: Web3, dispatch: Dispatch, walletAddress: string | undefined, transactionHash: string) => {
+  web3.eth.getTransactionReceipt(transactionHash).then((tx: TransactionReceipt) => {
+    if (tx.status) {
+      dispatch(transactionConfirmed(transactionHash));
+      if (walletAddress !== undefined) {
+        dispatch<any>(loadWalletBalance(web3, undefined));
+      }
+      return;
+    }
+
+    window.setTimeout(() => watchPendingTransaction(web3, dispatch, walletAddress, transactionHash), 5000)
+  }).catch((error: string) => {
+    //FIXME: handle error
+    console.log("error", error)
+  });
 }

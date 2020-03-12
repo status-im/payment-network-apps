@@ -279,10 +279,14 @@ const loadERC20Symbol = (web3: Web3, erc20: Contract) => {
   }
 }
 
-const loadWalletBalance = (web3: Web3, erc20: Contract) => {
+export const loadWalletBalance = (web3: Web3, _erc20: Contract | undefined) => {
   return async (dispatch: Dispatch, getState: () => RootState) => {
-    const address = getState().wallet.walletAddress!;
+    const state = getState();
+    const address = state.wallet.walletAddress!;
+    const erc20 = _erc20 !== undefined ? _erc20 : new web3.eth.Contract(erc20DetailedABI, state.wallet.erc20Address!);
+
     dispatch(loadingWalletBalance(address));
+
     return erc20.methods.balanceOf(address).call().then((balance: string) => {
       dispatch(balanceLoaded(balance, balance));
       return erc20;

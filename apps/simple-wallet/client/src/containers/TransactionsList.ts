@@ -33,7 +33,7 @@ const mapStateToProps = (state: RootState): StateProps => {
 
   return {
     ...props,
-    loading: state.transactions.loading,
+    loading: state.transactions.loadingRequests > 0,
     transactions: transactions,
   }
 };
