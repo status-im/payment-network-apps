@@ -255,7 +255,6 @@ const loadERC20 = (web3: Web3, factory: Contract) => {
 
 const loadERC20Symbol = (web3: Web3, erc20: Contract) => {
   return async (dispatch: Dispatch, getState: () => RootState) => {
-    const address = getState().wallet.erc20Address;
     dispatch(loadingERC20Symbol());
     return erc20.methods.symbol().call().then((symbol: string) => {
       dispatch(erc20SymbolLoaded(symbol));

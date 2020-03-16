@@ -40,14 +40,14 @@ const roundEther = (wei: string | undefined) => {
     roundedBalance = `${roundedBalance}.${decimals}`;
   }
 
-  return [fullTotal, roundedBalance];
+  return roundedBalance;
 }
 
 
 const TopPanel = (props: Props) => {
   const classes = useStyles();
 
-  const [balance, roundedBalance] = roundEther(props.balance);
+  const roundedBalance = roundEther(props.balance);
 
   return <div className={classes.container}>
     <div>

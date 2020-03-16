@@ -5,7 +5,6 @@ import Web3 from 'web3';
 import { TransactionReceipt } from 'web3-core';
 import { loadWalletBalance } from './wallet';
 import { loadBlock } from './blocks';
-import { abi as keycardWalletABI } from '../contracts/KeycardWallet';
 import { addPadding } from "../utils";
 
 export const TXS_LOADING = "TXS_LOADING";
@@ -91,7 +90,7 @@ type ToOrFrom = "to" | "from";
 const getPastTransactions = (web3: Web3, erc20: Contract, walletAddress: string, fromBlock: number, toOrFrom: ToOrFrom) => {
   return (dispatch: Dispatch, getState: () => RootState) => {
     const paddedWalletAddress = addPadding(64, walletAddress);
-    const eventType = toOrFrom == "to" ? "TopUp" : "NewPaymentRequest";
+    const eventType = toOrFrom === "to" ? "TopUp" : "NewPaymentRequest";
     const topics: (null | string)[] = [null, null, null];
 
     switch(toOrFrom) {
@@ -130,7 +129,7 @@ const subscribeToTransactions = (web3: Web3, erc20: Contract, walletAddress: str
       }
     };
 
-    const eventType = toOrFrom == "to" ? "TopUp" : "NewPaymentRequest";
+    const eventType = toOrFrom === "to" ? "TopUp" : "NewPaymentRequest";
 
     erc20.events.Transfer(options).on('data', (event: any) => {
       const values = event.returnValues;
