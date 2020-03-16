@@ -16,11 +16,11 @@ const styles = {
   }
 };
 
-const TopPanel = ({ total, fullTotal }) => (
+const TopPanel = ({ total, fullTotal, tokenSymbol }) => (
   <div style={styles.container}>
     <div>
       <Typography variant="h2" color="inherit">
-        {total} Ξ
+        {total} {tokenSymbol}
       </Typography>
       <Typography variant="body1" color="inherit" style={{textAlign: "center"}}>
         {fullTotal}

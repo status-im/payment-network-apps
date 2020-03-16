@@ -5,6 +5,7 @@ import { selectWallet } from '../actions';
 const mapStateToProps = state => ({
   //FIXME: hack
   wallets: state.wallets,
+  tokenSymbol: state.tokenSymbol,
 });
 
 const mapDispatchToProps = dispatch => ({

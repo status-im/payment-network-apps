@@ -1,4 +1,5 @@
 import {
+  TOKEN_DISCOVERED,
   ETHEREUM_LOAD_ERROR,
   WEB3_ERROR,
   ETHEREUM_LOADED,
@@ -36,7 +37,6 @@ const newWalletFormInitialState = {
   keycardAddress: null,
   index: null,
   balance: null,
-  availableBalance: null,
   toppingUp: false,
   maxTxValue: "0.1",
 }
@@ -50,6 +50,8 @@ const initialState = {
   loadingWeb3: true,
   loadingWeb3Error: null,
   loadingOwner: false,
+  tokenAddress: null,
+  tokenSymbol: null,
   owner: null,
   ownerBalance: null,
   loadingWallets: false,
@@ -88,6 +90,11 @@ export default function(state, action) {
       return Object.assign({}, state, {
         networkID: action.id,
       });
+    case TOKEN_DISCOVERED:
+      return Object.assign({}, state, {
+        tokenAddress: action.address,
+        tokenSymbol: action.symbol,
+      });
     case LOADING_OWNER:
       return Object.assign({}, state, {
         loadingOwner: true,
@@ -125,14 +132,11 @@ export default function(state, action) {
     case WALLET_LOADED:
       const wallet = {
         address: action.address,
-        nonce: action.nonce,
         keycardAddress: action.keycardAddress,
         name: action.name,
         balance: action.balance,
-        availableBalance: action.availableBalance,
-        icon: "X",
+        icon: "💳",
         index: action.index,
-        maxTxValue: action.maxTxValue,
       }
 
       return Object.assign({}, state, {

@@ -55,7 +55,7 @@ const styles = {
   }
 };
 
-const WalletsListItem = ({ wallet, onItemClick }) => {
+const WalletsListItem = ({ wallet, onItemClick, tokenSymbol }) => {
   const secondary = <span>
     <span style={styles.secondaryLine}>🔖 {compressedAddress(wallet.address, 8)}</span>
     <span style={styles.secondaryLine}>💳 {isEmptyAddress(wallet.keycardAddress) ? "" : compressedAddress(wallet.keycardAddress, 8)}</span>
@@ -73,7 +73,7 @@ const WalletsListItem = ({ wallet, onItemClick }) => {
                   <CircularProgress color="secondary" style={styles.avatarLoading}/>}
                   {wallet.icon}
               </Avatar>
-              <StyledListItemText primary={formattedBalance(wallet.availableBalance) + " of " + formattedBalance(wallet.balance) + " Ξ"} secondary={wallet.creating ? secondaryLoading : secondary} />
+              <StyledListItemText primary={formattedBalance(wallet.balance) + " " + tokenSymbol} secondary={wallet.creating ? secondaryLoading : secondary} />
             </React.Fragment>
         }
 

@@ -3,7 +3,7 @@ import TopPanel from '../components/TopPanel';
 
 const mapStateToProps = state => {
   const totalWei = state.wallets.filter((wallet) => wallet).reduce((acc, w) => {
-    return acc.add(new web3.utils.BN(w.availableBalance))
+    return acc.add(new web3.utils.BN(w.balance))
   }, new web3.utils.BN(0));
 
   const fullTotal = web3.utils.fromWei(totalWei);
@@ -15,6 +15,7 @@ const mapStateToProps = state => {
   }
 
   return {
+    tokenSymbol: state.tokenSymbol,
     total: total,
     fullTotal: fullTotal,
   }

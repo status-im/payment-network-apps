@@ -1,7 +1,15 @@
 import EmbarkJS from 'Embark/EmbarkJS';
 import KeycardWalletFactory from 'Embark/contracts/KeycardWalletFactory';
+import ERC20Detailed from 'Embark/contracts/ERC20Detailed';
 import KeycardWallet from 'Embark/contracts/KeycardWallet';
 import { emptyAddress } from '../utils';
+
+export const TOKEN_DISCOVERED = 'TOKEN_DISCOVERED';
+export const tokenDiscovered = (address, symbol) => ({
+  type: TOKEN_DISCOVERED,
+  address,
+  symbol,
+});
 
 export const NEW_WALLET = 'NEW_WALLET';
 export const newWallet = () => ({
@@ -65,16 +73,13 @@ export const loadingWallet = (index) => ({
 });
 
 export const WALLET_LOADED = 'WALLET_LOADED';
-export const walletLoaded = (index, address, nonce, name, keycardAddress, balance, availableBalance, maxTxValue) => ({
+export const walletLoaded = (index, address, name, keycardAddress, balance) => ({
   type: WALLET_LOADED,
   index,
   address,
-  nonce,
   name,
   keycardAddress,
   balance,
-  availableBalance,
-  maxTxValue,
 });
 
 export const NETWORK_ID_LOADED = "NETWORK_ID_LOADED";
@@ -124,7 +129,14 @@ export const enableEthereum = () => {
 };
 
 export const loadOwner = () => {
-  return (dispatch) => {
+  return async dispatch => {
+    const tokenAddress = await KeycardWalletFactory.methods.currency().call();
+    const erc20 = new EmbarkJS.Blockchain.Contract({
+      address: tokenAddress,
+      abi: ERC20Detailed.options.jsonInterface,
+    });
+    const tokenSymbol  = await erc20.methods.symbol().call();
+    dispatch(tokenDiscovered(tokenAddress, tokenSymbol));
     dispatch(loadingOwner())
     return web3.eth.getAccounts()
       .then((accounts) => {
@@ -184,50 +196,26 @@ export const walletWatched = (index, date) => ({
   date,
 });
 
-export const watchWallet = (walletContract, index, nonce) => {
-  return (dispatch) => {
-    //FIXME: needed for status browser?
-    return;
-    window.setTimeout(() => {
-      walletContract.methods.nonce().call()
-        .then((newNonce) => {
-          try {
-            if (newNonce != nonce) {
-              alert("payment requested")
-            }
-            dispatch(walletWatched(index, new Date()))
-            dispatch(watchWallet(walletContract, index, newNonce))
-          } catch(err) {
-            alert(err)
-          }
-        })
-
-    }, 2000)
-  }
-}
-
 export const loadWallet = (owner, index) => {
-  return async (dispatch) => {
+  return async (dispatch, getState) => {
+    const state = getState();
     dispatch(loadingWallet(index))
 
-    const address = await KeycardWalletFactory.methods.ownersWallets(owner, index).call();
+    const walletAddress = await KeycardWalletFactory.methods.ownersWallets(owner, index).call();
     const jsonInterface = KeycardWallet.options.jsonInterface;
     const walletContract = new EmbarkJS.Blockchain.Contract({
       abi: jsonInterface,
-      address: address,
+      address: walletAddress,
     });
-    walletContract.address = address;
 
-    const name = "x";
-    const balance = await web3.eth.getBalance(address);
-    const availableBalance = await walletContract.methods.availableBalance().call();
+    const erc20 = new EmbarkJS.Blockchain.Contract({
+      address: state.tokenAddress,
+      abi: ERC20Detailed.options.jsonInterface,
+    });
+
+    const balance = await erc20.methods.balanceOf(walletAddress).call();
     const keycardAddress = await walletContract.methods.keycard().call();
-    const nonce = 0;
-    const { maxTxValue } = await walletContract.methods.settings().call();
-
-    dispatch(walletLoaded(index, address, nonce, name, keycardAddress, balance, availableBalance, maxTxValue))
-    // FIXME: change it with an alternative to continuous fetching
-    dispatch(watchWallet(walletContract, index, nonce))
+    dispatch(walletLoaded(index, walletAddress, "-", keycardAddress, balance))
   };
 }
 
@@ -280,7 +268,7 @@ export const createWallet = () => {
     const state = getState();
     const maxTxValue = web3.utils.toWei(state.newWalletForm.maxTxValue);
     const keycardAddress = state.newWalletForm.keycardAddress || emptyAddress;
-    const create = KeycardWalletFactory.methods.create(keycardAddress, {maxTxValue: maxTxValue, minBlockDistance: 1}, false);
+    const create = KeycardWalletFactory.methods.create(keycardAddress, false, 1, maxTxValue);
     const walletIndex = state.wallets.length;
 
     const estimatedGas = await create.estimateGas()
