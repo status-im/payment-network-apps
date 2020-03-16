@@ -6,6 +6,7 @@ import { abi as erc20DetailedABI } from '../contracts/ERC20Detailed';
 import { isEmptyAddress } from '../utils';
 import { loadTransactions } from './transactions';
 import { Contract } from 'web3-eth-contract';
+import { walletFactoryAddress } from "../config";
 
 export const ERR_WALLET_NOT_FOUND = "ERR_WALLET_NOT_FOUND";
 export interface ErrWalletNotFound {
@@ -38,15 +39,6 @@ export type WalletErrors =
   ErrERC20NotSet |
   ErrGettingERC20Symbol |
   ErrLoadingBalance;
-
-
-// const walletFactoryAddress = "0x43069D770a44352c94E043aE3F815BfeAfE5b279";
-// const walletFactoryAddress = "0x8C9437F77103E6aC431Af3e9D45cD3D8A972047e";
-
-// Ropsten
-const walletFactoryAddress = "0x37491bee77c66cb1c4c2be92e4ba3a9eb5487801";
-//FIXME: remove test address
-// const testKeycardAddress = "0x13F1e02E78A0636420cDc1BDaE343aDbBfF308F0";
 
 export const WALLET_KEYCARD_ADDRESS_NOT_SPECIFIED = "WALLET_KEYCARD_ADDRESS_NOT_SPECIFIED";
 export interface WalletKeycardAddressNotSpecifiedAction {
