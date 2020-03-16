@@ -7,3 +7,5 @@ dist
 embarkArtifacts
 node_modules
 react-app-env.d.ts
+
+apps/simple-wallet/client/src/config.ts
