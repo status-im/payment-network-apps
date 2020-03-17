@@ -53,11 +53,11 @@ contract KeycardWallet {
 
   function _setRegister(address _register) internal {
     if (register != address(0)) {
-      KeycardRegistry(register).unregister(owner, keycard);
+      KeycardRegistry(register).unregister(keycard);
     }
 
     if (_register != address(0) && msg.sender != _register) {
-      KeycardRegistry(_register).register(owner, keycard);
+      KeycardRegistry(_register).register(keycard);
     }
 
     register = _register;
@@ -76,10 +76,6 @@ contract KeycardWallet {
   }
 
   function setOwner(address _owner) public onlyOwner {
-    if (register != address(0)) {
-      KeycardRegistry(register).setOwner(owner, _owner);
-    }
-
     owner = _owner;
   }
 
