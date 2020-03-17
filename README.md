@@ -4,6 +4,8 @@ This repository contains the dApps and SmartContract used for the Keycard Paymen
 
 The goal of the project itself is to provide the means for using the Keycard as a payment method in retail stores or other non-remote scenarios (i.e: both merchant and buyer are in the same place). The aim is to make purchases using cryptocurrencies as easy and familiar as tapping your card to POS. Note that there is no crypto-to-fiat conversion involved so the scenario we are addressing is where all parties want to use crypto. Beside convenience, the network we are building will have several mitigation measures for unauthorized transactions. While some of these measures are already in place, more are in the works.
 
+A guide on how to test the currently deployed version is at https://gist.github.com/gravityblast/49ea0782817ee20ba60af17bbca7b0db
+
 ## Network components
 
 Currently the network is made of the following components:
