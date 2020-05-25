@@ -12,7 +12,7 @@ Currently the network is made of the following components:
 
 * **Keycard Wallet**: This smartcontract is the buyer-side contract which holds fund, performs security checks and approves payment requests from merchant. The owner of the contract can configure the Keycard authorized for signing, the max tx amount, etc. Payment requests are meta-transactions which must be signed by the authorized Keycard. Only ERC20 tokens are supported for payments.
 * **Keycard Wallet Factory**: This smartcontract is both a factory to create new wallets and a registry keeping the association between Keycards and Wallets. This is needed during payment to lookup the address of the wallet by having the address of the Keycard.
-* **Keycard Cash**: This is an applet running on the Keycard which is completely independent from the hardware wallet applet. This applet simply generates a random keypair on install which cannot be exported and signs any hash presented to it. This is used as an authorization factor for payments proving the physical presence of the card (and supposedly its owner) at the moment of the transaction. 
+* **Keycard Cash**: This is an applet running on the Keycard which is completely independent from the hardware wallet applet. This applet simply generates a random keypair on install which cannot be exported and signs any hash presented to it. This is used as an authorization factor for payments proving the physical presence of the card (and supposedly its owner) at the moment of the transaction.
 * **Merchant wallet**: The merchant wallet is the final recipient of a payment transaction. At the moment simple EOA are used for merchant wallets. However the plain is to first introduce a merchant registry and secondly a merchant wallet contract in order to implement merchant-related fraud mitigation strategies. Since one of the goal is to keep the system as open as possible and to have anybody be possibly a merchant, a lot of work will be needed to strike a balance between security, openess and convenience.
 * **POS**: A (d)App which the merchant uses to perform transactions. It must be able to communicate with the Keycard using NFC and send payment request to the wallets. Our implementation is a dApp using a Keycard-specific API, currently only supported in Status.
 * **Wallet manager**: An app which allows an user to monitor transactions, funds but also configure the wallet contract settings (like the authorized keycard). At the moment we have two dApps, one which does not require a web3 browser but is "read-only" and the other requiring a web3 browser which can do more. However we plan to merge these.
@@ -34,7 +34,7 @@ Currently the network is made of the following components:
 
 Instantiates the KeycardWalletFactory. The _currency parameter is the address of an ERC20 token.
 
-`create(address _keycard, bool _keycardIsOwner, uint256 _minBlockDistance, uint256 _txMaxAmount)` 
+`create(address _keycard, bool _keycardIsOwner, uint256 _minBlockDistance, uint256 _txMaxAmount)`
 
 Creates a KeycardWallet and associates it with this register. The arguments are basically forwarded to the KeycardWallet constructor. The first argument is the address derived from the public key retruned by the Keycard Cash applet (i.e. the Keycard Cash address). The second arguments tells whether the owner of the created wallet is the caller of the method (false) or the Keycard itself. The third argument is the minimum amount of blocks which must elapse between two subsequent transactions. This is used to have a cooldown between transactions. Knowing how frequently blocks are mined this can be used to set a minimum time limit between transactions. The last parameter is the maximum amount, in tokens, of each transaction.
 
@@ -93,12 +93,3 @@ Changes the keycard authorized to sign payment requests for this wallet. Must be
 `setMinBlockDistance(uint256 _minBlockDistance)`
 
 Changes the minimum block distance. Must be called by the owner.
-
-
-## Keycard specific web3 API
-
-To sign transactions using the Keycard Cash applet, the Web3 browser must support the following method.
-
-`keycard_signTypedData(signer, data)`
-
-This method works exactly like the standard ERC-712 `eth_signTypedData_v3` except that signer parameter is not used to sign the data (TODO: is the signer parameter used for anything?). To sign the data, the browser should require tapping the Keycard and send the hash of the data through the SIGN APDU to the Cash applet. More details and examples are available at https://keycard.tech/docs/sdk/cash.html.
