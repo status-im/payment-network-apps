@@ -3,6 +3,7 @@ pragma experimental ABIEncoderV2;
 
 import "./KeycardRegistry.sol";
 import "./IERC20.sol";
+import "./IBlockRelay.sol";
 
 contract KeycardWallet {
   event NewPayment(uint256 blockNumber, address to, address currency, uint256 amount);
@@ -29,6 +30,7 @@ contract KeycardWallet {
   bytes32 DOMAIN_SEPARATOR;
 
   address public register;
+  address public blockRelay;
   address public owner;
   address public keycard;
   mapping(address => uint) public tokenMaxTxAmount;
@@ -40,14 +42,15 @@ contract KeycardWallet {
     _;
   }
 
-  constructor(address _owner, address _keycard, address _register, uint256 _minBlockDistance, address _token, uint256 _tokenMaxTxAmount) public {
+  constructor(address _owner, address _keycard, address _register, address _blockRelay, uint256 _minBlockDistance, address _token, uint256 _tokenMaxTxAmount) public {
     owner = _owner == address(0) ? msg.sender : _owner;
     keycard = _keycard;
     register = address(0);
+    blockRelay = _blockRelay;
 
     minBlockDistance = _minBlockDistance;
     _setRegister(_register);
-    lastUsedBlockNum = block.number;
+    lastUsedBlockNum = IBlockRelay(blockRelay).getNumber();
     tokenMaxTxAmount[_token] = _tokenMaxTxAmount;
   }
 
@@ -146,16 +149,16 @@ contract KeycardWallet {
     require(verify(_payment, _signature), "signer is not the keycard");
 
     // check that the block number used for signing is less than the block number
-    require(_payment.blockNumber < block.number, "transaction cannot be in the future");
+    require(_payment.blockNumber < IBlockRelay(blockRelay).getNumber(), "transaction cannot be in the future");
 
     // check that the block number used is not too old
-    require(_payment.blockNumber >= (block.number - maxTxDelayInBlocks), "transaction too old");
+    require(_payment.blockNumber >= (IBlockRelay(blockRelay).getNumber() - maxTxDelayInBlocks), "transaction too old");
 
     // check that the block number is not too near to the last one in which a tx has been processed
     require(_payment.blockNumber >= (lastUsedBlockNum + minBlockDistance), "cooldown period not expired yet");
 
     // check that the blockHash is valid
-    require(_payment.blockHash == blockhash(_payment.blockNumber), "invalid block hash");
+    require(_payment.blockHash == IBlockRelay(blockRelay).getHash(_payment.blockNumber), "invalid block hash");
 
     // check that _payment.amount is not greater than the maxTxValue for this currency
     require(_payment.amount <= tokenMaxTxAmount[_payment.currency], "amount not allowed");
@@ -167,7 +170,7 @@ contract KeycardWallet {
     require(IERC20(_payment.currency).transfer(_payment.to, _payment.amount), "transfer failed");
 
     // set new baseline block for checks
-    lastUsedBlockNum = block.number;
+    lastUsedBlockNum = IBlockRelay(blockRelay).getNumber();
     emit NewPayment(_payment.blockNumber, _payment.to, _payment.currency, _payment.amount);
   }
 }

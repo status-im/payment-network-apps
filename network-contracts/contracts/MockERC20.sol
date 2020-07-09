@@ -1,11 +1,10 @@
 pragma solidity >=0.5.0 <0.7.0;
-pragma experimental ABIEncoderV2;
 
 import "./IERC20.sol";
 
 contract MockERC20 is IERC20 {
-    function totalSupply() public view returns (uint256) {
-        return 1000;
+    constructor() public {
+        totalSupply = 1000;
     }
 
     function balanceOf(address /*account*/) public view returns (uint256) {
