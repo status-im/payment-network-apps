@@ -3,7 +3,7 @@ pragma solidity >=0.5.0 <0.7.0;
 import "./IERC20.sol";
 
 contract MockERC20 is IERC20 {
-    constructor() public {
+    function init() public {
         totalSupply = 1000;
     }
 

@@ -6,11 +6,11 @@ contract MockBlockRelay is IBlockRelay {
   uint256 public lastBlock;
   mapping (uint256 => bytes32) public hashes;
 
-  function getNumber() external view returns (uint256) {
+  function getNumber() public override view returns (uint256) {
     return lastBlock;
   }
 
-  function getHash(uint256 num) external view returns (bytes32) {
+  function getHash(uint256 num) public override view returns (bytes32) {
     if ((num > lastBlock) || (lastBlock - num) > 255) {
       return bytes32(0);
     }

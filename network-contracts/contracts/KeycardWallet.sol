@@ -42,7 +42,9 @@ contract KeycardWallet {
     _;
   }
 
-  constructor(address _owner, address _keycard, address _register, address _blockRelay, uint256 _minBlockDistance, address _token, uint256 _tokenMaxTxAmount) public {
+  function init(address _owner, address _keycard, address _register, address _blockRelay, uint256 _minBlockDistance, address _token, uint256 _tokenMaxTxAmount) public {
+    require(owner == address(0), "this function can only be invoked once");
+
     owner = _owner == address(0) ? msg.sender : _owner;
     keycard = _keycard;
     register = address(0);
