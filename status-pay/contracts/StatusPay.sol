@@ -42,6 +42,9 @@ contract StatusPay {
     networkOwner = msg.sender;
     blockRelay = IBlockRelay(_blockRelay);
     token = IERC20(_token);
+
+    require(_maxDelayInBlocks <= blockRelay.historySize(), "max delay cannot be more than history size");
+
     maxTxDelayInBlocks = _maxDelayInBlocks;
 
     DOMAIN_SEPARATOR = keccak256(abi.encode(
@@ -147,17 +150,19 @@ contract StatusPay {
 
     uint256 blockNumber = blockRelay.getLast();
 
-    // check that the block number used for signing is less than the block number
-    require(_payment.blockNumber < blockNumber, "transaction cannot be in the future");
+    // check that the block number used for signing is not newer than the block number
+    require(_payment.blockNumber <= blockNumber, "transaction cannot be in the future");
 
     // check that the block number used is not too old
-    require(_payment.blockNumber >= (blockNumber - maxTxDelayInBlocks), "transaction too old");
+    require(_payment.blockNumber > (blockNumber - maxTxDelayInBlocks), "transaction too old");
 
     // check that the block number is not too near to the last one in which a tx has been processed
     require(_payment.blockNumber >= (payer.lastUsedBlock + payer.minBlockDistance), "cooldown period not expired yet");
 
     // check that the blockHash is valid
     require(_payment.blockHash == blockRelay.getHash(_payment.blockNumber), "invalid block hash");
+    // this check is redundant but provideds a safety net if the oracle returns a 0 hash
+    require(_payment.blockHash != bytes32(0), "invalid block hash");
 
     // perform transfer
     payer.balance -= _payment.amount;

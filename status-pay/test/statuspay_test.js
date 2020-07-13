@@ -9,21 +9,17 @@ const ethSigUtil = require('eth-sig-util');
 let token, block, statusPay, keycardKey;
 
 const zeroAddress = "0x0000000000000000000000000000000000000000";
+const seed = bip39.mnemonicToSeedSync("candy maple cake sugar pudding cream honey rich smooth crumble sweet treat");
+const hdk = hdkey.fromMasterSeed(seed);
 
 contract('StatusPay', (accounts) => {
-  let owner = accounts[0];
-  let keycard = accounts[1];
-  let merchant = accounts[2];
-  let network = accounts[3];
+  const owner = accounts[0];
+  const keycard = accounts[1];
+  const merchant = accounts[2];
+  const network = accounts[3];
 
   before(async () => {
-    const seed = bip39.mnemonicToSeedSync("candy maple cake sugar pudding cream honey rich smooth crumble sweet treat");
-    const hdk = hdkey.fromMasterSeed(seed);
-    const addrNode = hdk.derivePath("m/44'/60'/0'/0/1");
-    const keycardAddr = addrNode.getWallet().getAddressString();
-    keycardKey = addrNode.getWallet().getPrivateKey();
-
-    assert.equal(keycardAddr.toLowerCase(), keycard.toLowerCase());
+    keycardKey = deriveKey(1, keycard);
 
     token = await ERC20.new({from: network});
     block = await BlockRelay.new({from: network});
@@ -36,36 +32,126 @@ contract('StatusPay', (accounts) => {
     await token.transfer(owner, 100, {from: network});
   });
 
-  it('creates accounts', async () => {
+  it('requestPayment with inexistant account', async () => {
+    try {
+      await requestPaymentTest(10);
+      assert.fail("requestPayment should have failed");
+    } catch (err) {
+      assert.equal(err.reason, "no account for this Keycard");
+    }
+  });
+
+  it('creates buyer account', async () => {
     await statusPay.createAccount(owner, keycard, 1, 10, {from: network});
+    assert.equal((await statusPay.accounts.call(owner)).balance.toNumber(), 0);
+  });
+
+  it('requestPayment with inexisting merchant', async () => {
+    try {
+      await requestPaymentTest(10);
+      assert.fail("requestPayment should have failed");
+    } catch (err) {
+      assert.equal(err.reason, "payee account does not exist");
+    }
+  });
+
+  it('creates merchant account', async () => {
     await statusPay.createAccount(merchant, zeroAddress, 1, 1000, {from: network});
+    assert.equal((await statusPay.accounts.call(merchant)).balance.toNumber(), 0);
+  });
+
+  it('requestPayment with insufficient balance', async () => {
+    try {
+      await requestPaymentTest(10);
+      assert.fail("requestPayment should have failed");
+    } catch (err) {
+      assert.equal(err.reason, "balance is not enough");
+    }
   });
 
   it('topup account', async () => {
     await token.approve(statusPay.address, 100, {from: owner});
     await statusPay.topup(owner, 100);
+    await block.addBlock(501, "0xbababababaabaabaaaacaabaaaaaaadaaadcaaadaaaaaaacaaaaaaddeaaaaaaa", {from: network});
+
+    assert.equal((await statusPay.accounts.call(owner)).balance.toNumber(), 100);
   });
 
-  it('requestPayment with ERC20', async () => {
-    await block.addBlock(501, "0xbababababaabaabaaaacaabaaaaaaadaaadcaaadaaaaaaacaaaaaaddeaaaaaaa", {from: network});
-    const blockNumber = await block.getLast.call();
-    const blockHash = await block.getHash.call(blockNumber);
-    await block.addBlock(502, "0xbababababaabaabaaaacaabaaaaaaaaaaaacaaaaaaaaaaacaaaaaaaaaaaaaaaa", {from: network});
+  it('requestPayment over limit', async () => {
+    try {
+      await requestPaymentTest(11);
+      assert.fail("requestPayment should have failed");
+    } catch (err) {
+      assert.equal(err.reason, "amount not allowed");
+    }
+  });
 
-    const to = merchant;
-    const value = 10;
+  it('requestPayment with block too old', async () => {
+    try {
+      await requestPaymentTest(10, (await block.getLast.call()).toNumber() - 10);
+      assert.fail("requestPayment should have failed");
+    } catch (err) {
+      assert.equal(err.reason, "transaction too old");
+    }
+  });
 
-    const message = {blockNumber: blockNumber.toString(), blockHash: blockHash, currency: token.address, amount: value, to: to};
-    const sig = signPaymentRequest(keycardKey, message);
-    const receipt = await statusPay.requestPayment(message, sig, {from: merchant});
+  it('requestPayment with invalid hash', async () => {
+    try {
+      await requestPaymentTest(10, undefined, "0xbababababaabaabaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+      assert.fail("requestPayment should have failed");
+    } catch (err) {
+      assert.equal(err.reason, "invalid block hash");
+    }
+  });
+
+  it('requestPayment', async () => {
+    const receipt = await requestPaymentTest(10);
 
     const event = receipt.logs.find(element => element.event.match('NewPayment'));
 
-    assert.equal(event.args.to, to);
-    assert.equal(event.args.amount, value);
+    assert.equal(event.args.to, merchant);
+    assert.equal(event.args.amount, 10);
+
+    assert.equal((await statusPay.accounts.call(owner)).balance.toNumber(), 90);
+    assert.equal((await statusPay.accounts.call(merchant)).balance.toNumber(), 10);
   });
 
-  function signPaymentRequest(signer, message) {
+  it('requestPayment without waiting for cooldown', async () => {
+    try {
+      await requestPaymentTest(10);
+      assert.fail("requestPayment should have failed");
+    } catch (err) {
+      assert.equal(err.reason, "cooldown period not expired yet");
+    }
+  });
+
+  it('requestPayment with block in the future', async () => {
+    try {
+      await requestPaymentTest(10, (await block.getLast.call()).toNumber() + 1);
+      assert.fail("requestPayment should have failed");
+    } catch (err) {
+      assert.equal(err.reason, "transaction cannot be in the future");
+    }
+  });
+
+  requestPaymentTest = async (value, blockNum, blockH) => {
+    const blockNumber = blockNum || (await block.getLast.call()).toNumber();
+    const blockHash = blockH || await block.getHash.call(blockNumber);
+
+    const message = {blockNumber: blockNumber, blockHash: blockHash, amount: value, to: merchant};
+    const sig = signPaymentRequest(keycardKey, message);
+    return await statusPay.requestPayment(message, sig, {from: merchant});
+  };
+
+  deriveKey = (index, expectedAddr) => {
+    const addrNode = hdk.derivePath("m/44'/60'/0'/0/" + index);
+    const generatedAddr = addrNode.getWallet().getAddressString();
+    assert.equal(generatedAddr.toLowerCase(), expectedAddr.toLowerCase());
+
+    return addrNode.getWallet().getPrivateKey();
+  };
+
+  signPaymentRequest = (signer, message) => {
     let domain = [
       { name: "name", type: "string" },
       { name: "version", type: "string" },
@@ -98,5 +184,5 @@ contract('StatusPay', (accounts) => {
     };
 
     return ethSigUtil.signTypedData(signer, { data: data });
-  }
+  };
 });
