@@ -71,10 +71,34 @@ contract('StatusPay', (accounts) => {
 
   it('topup account', async () => {
     await token.approve(statusPay.address, 100, {from: owner});
-    await statusPay.topup(owner, 100);
+    await statusPay.topup(owner, 100, {from: owner});
     await block.addBlock(501, "0xbababababaabaabaaaacaabaaaaaaadaaadcaaadaaaaaaacaaaaaaddeaaaaaaa", {from: network});
 
+    assert.equal((await token.balanceOf.call(owner)).toNumber(), 0);
     assert.equal((await statusPay.accounts.call(owner)).balance.toNumber(), 100);
+  });
+
+  it('topup exceed ERC20 balance', async () => {
+    await token.approve(statusPay.address, 100, {from: owner});
+
+    try {
+      await statusPay.topup(owner, 100, {from: owner});
+      assert.fail("topup should have failed");
+    } catch (err) {
+      assert(err.reason == "transfer failed" || err.reason == "balance or allowance exceeded");
+    }
+
+    assert.equal((await token.balanceOf.call(owner)).toNumber(), 0);
+    assert.equal((await statusPay.accounts.call(owner)).balance.toNumber(), 100);
+  });
+
+  it('topup account non-existing account', async () => {
+    try {
+      await statusPay.topup(network, 100, {from: network});
+      assert.fail("topup should have failed");
+    } catch (err) {
+      assert.equal(err.reason, "account does not exist");
+    }
   });
 
   it('requestPayment over limit', async () => {
@@ -131,6 +155,35 @@ contract('StatusPay', (accounts) => {
       assert.fail("requestPayment should have failed");
     } catch (err) {
       assert.equal(err.reason, "transaction cannot be in the future");
+    }
+  });
+
+
+  it('withdraw', async () => {
+    await statusPay.withdraw(owner, 80, {from: owner});
+
+    assert.equal((await token.balanceOf.call(owner)).toNumber(), 80);
+    assert.equal((await statusPay.accounts.call(owner)).balance.toNumber(), 10);
+  });
+
+  it('withdraw more than balance allows', async () => {
+    try {
+      await statusPay.withdraw(owner, 11, {from: owner});
+      assert.fail("withdraw should have failed");
+    } catch (err) {
+      assert.equal(err.reason, "not enough balance");
+    }
+
+    assert.equal((await token.balanceOf.call(owner)).toNumber(), 80);
+    assert.equal((await statusPay.accounts.call(owner)).balance.toNumber(), 10);
+  });
+
+  it('withdraw non existing account', async () => {
+    try {
+      await statusPay.withdraw(network, 10, {from: network});
+      assert.fail("withdraw should have failed");
+    } catch (err) {
+      assert.equal(err.reason, "account does not exist");
     }
   });
 
