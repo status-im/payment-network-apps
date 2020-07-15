@@ -74,9 +74,10 @@ contract StatusPay {
 
   function transferAccount(address _newOwner, address _keycard) public {
     Account storage oldAcc = accounts[msg.sender];
-    require(oldAcc.exists, "account does not exist");
+    require(oldAcc.exists, "account to transfer does not exist");
 
     Account storage newAcc = accounts[_newOwner];
+    require(!newAcc.exists, "the new owner already has an account");
 
     newAcc.exists = true;
     newAcc.balance = oldAcc.balance;
