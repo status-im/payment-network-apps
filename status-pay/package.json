@@ -8,11 +8,12 @@
   },
   "license": "MIT",
   "dependencies": {
-    "truffle": "^5.1.34"
+    "ethers": "^5.0.7",
+    "truffle": "^5.1.34",
+    "eth-sig-util": "^2.5.3"
   },
   "devDependencies": {
     "bip39": "^3.0.2",
-    "eth-sig-util": "^2.5.3",
     "ethereumjs-wallet": "^1.0.0"
   }
 }
