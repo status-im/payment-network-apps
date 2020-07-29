@@ -96,11 +96,11 @@ module.exports = class Account {
     const sig = this.signTypedData(tx, NUTBERRY_TX_TYPED_DATA);
     const { r, s, v } = ethers.utils.splitSignature(sig);
 
-    return encodeTx(Object.assign(tx, { r, s, v: v + 101 }));
+    return this.encodeTx(Object.assign(tx, { r, s, v: v + 101 }));
   }
 
   signTypedData(message, typeInfo) {
     const obj = Object.assign({ message: message }, typeInfo);
-    return ethSigUtil.signTypedData(this.sender.privateKey, { data: obj });
+    return ethSigUtil.signTypedData(Buffer.from(this.sender.privateKey.substring(2), "hex"), { data: obj });
   }
 }

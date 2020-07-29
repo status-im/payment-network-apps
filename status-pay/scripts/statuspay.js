@@ -7,7 +7,7 @@ const RPC_URL = `https://${BRIDGE_ADDRESS}.fly.dev`;
 const argv = parseArgs(process.argv.slice(2), {string: ["token", "wallet", "blockrelay", "statuspay", "keycard", "merchant", "blockHash"], default: {"endpoint": RPC_URL, "token": "0x722dd3f80bac40c951b51bdd28dd19d435762180", maxBlockDistance: 10}});
 
 async function loadSigner(argv, signer, passfile) {
-  let account = new Account();
+  let account = new Account(argv["endpoint"]);
 
   if (argv[signer]) {
     if (!argv[passfile]) {
@@ -26,11 +26,11 @@ async function loadSigner(argv, signer, passfile) {
 
 function getContract(argv, signer, optName, contractName) {
   if (!argv[optName]) {
-    console.error(`the --{optName} option must be specified`);
+    console.error(`the --${optName} option must be specified`);
     process.exit(1);
   }
 
-  return utils.loadContract(argv[optName], contractName, signer.sender);
+  return utils.loadContract(argv[optName], contractName, signer.provider);
 }
 
 function getBlockRelayContract(argv, signer) {
@@ -57,15 +57,14 @@ function getBlockOptions(argv) {
 async function initBlockRelay(argv, signer) {
   let blockRelay = getBlockRelayContract(argv, signer);
   let opts = getBlockOptions(argv);
-
-  await signer.sendDataTx(blockRelay.address, blockRelay.interface.functions.init.encode([opts.blockNumber, opts.blockHash]));
+  await signer.sendDataTx(blockRelay.address, blockRelay.interface.encodeFunctionData("init", [opts.blockNumber, opts.blockHash]));
 }
 
 async function addBlock(argv, signer) {
   let blockRelay = getBlockRelayContract(argv, signer);
   let opts = getBlockOptions(argv);
 
-  await signer.sendDataTx(blockRelay.address, blockRelay.interface.functions.addBlock.encode([opts.blockNumber, opts.blockHash]));
+  await signer.sendDataTx(blockRelay.address, blockRelay.interface.encodeFunctionData("addBlock", [opts.blockNumber, opts.blockHash]));
 }
 
 async function initStatusPay(argv, signer) {
@@ -74,7 +73,7 @@ async function initStatusPay(argv, signer) {
   let statusPay = getStatusPayContract(argv, signer);
   let maxBlockDistance = argv["maxBlockDistance"];
 
-  await signer.sendDataTx(statusPay.address, statusPay.interface.functions.init.encode([blockRelay.address, erc20.address, maxBlockDistance]));
+  await signer.sendDataTx(statusPay.address, statusPay.interface.encodeFunctionData("init", [blockRelay.address, erc20.address, maxBlockDistance]));
 }
 
 async function createWallet(argv, signer) {
