@@ -8,9 +8,10 @@
   },
   "license": "MIT",
   "dependencies": {
+    "eth-sig-util": "^2.5.3",
     "ethers": "^5.0.7",
-    "truffle": "^5.1.34",
-    "eth-sig-util": "^2.5.3"
+    "minimist": "^1.2.5",
+    "truffle": "^5.1.34"
   },
   "devDependencies": {
     "bip39": "^3.0.2",

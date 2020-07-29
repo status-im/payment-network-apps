@@ -2,10 +2,6 @@ const fs = require('fs');
 const { ethers } = require("ethers");
 const ethSigUtil = require('eth-sig-util');
 
-const BRIDGE_ADDRESS = '0xa9f96d8761aa05430d3ee2e7dff6b04978f13369';
-const RPC_URL = `https://${BRIDGE_ADDRESS}.fly.dev`;
-//const TOKEN_ADDRESS = '0x722dd3f80bac40c951b51bdd28dd19d435762180';
-
 const NUTBERRY_TX_TYPED_DATA = {
   types: {
     EIP712Domain: [
@@ -26,25 +22,15 @@ const NUTBERRY_TX_TYPED_DATA = {
 };
 
 module.exports = class Account {
-  constructor() {
-    this.provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+  constructor(rpcURL) {
+    this.provider = new ethers.providers.JsonRpcProvider(rpcURL);
     this.sender = null;
     this.senderAddress = null;
   }
 
-  async init(argv) {
-    if (argv["account"]) {
-      if (!argv["passfile"]) {
-        console.error("the --passfile option must be specified when using the --account option");
-        process.exit(1);
-      }
-
-      this.sender = await this.loadAccount(argv["account"], argv["passfile"]);
-      this.senderAddress = await this.sender.getAddress();
-    } else {
-      console.error("--account is required");
-      process.exit(1);
-    }
+  async init(account, passfile) {
+    this.sender = await this.loadAccount(account, passfile);
+    this.senderAddress = await this.sender.getAddress();
   }
 
   async loadAccount(account, passfile) {
@@ -53,8 +39,8 @@ module.exports = class Account {
     return await ethers.Wallet.fromEncryptedJson(json, pass);
   }
 
-  async sendData(to, data) {
-    let signedTx = await this.signTransaction({
+  async sendDataTx(to, data) {
+    let signedTx = this.signTransaction({
       to: to,
       data: data,
       nonce: await this.provider.getTransactionCount(this.senderAddress, 'pending')
@@ -107,10 +93,14 @@ module.exports = class Account {
   }
 
   signTransaction(tx) {
-    const obj = Object.assign({ message: tx }, NUTBERRY_TX_TYPED_DATA);
-    const sig = ethSigUtil.signTypedData(this.sender.privateKey, { data: data });
+    const sig = this.signTypedData(tx, NUTBERRY_TX_TYPED_DATA);
     const { r, s, v } = ethers.utils.splitSignature(sig);
 
     return encodeTx(Object.assign(tx, { r, s, v: v + 101 }));
+  }
+
+  signTypedData(message, typeInfo) {
+    const obj = Object.assign({ message: message }, typeInfo);
+    return ethSigUtil.signTypedData(this.sender.privateKey, { data: obj });
   }
 }
