@@ -6,7 +6,7 @@ const parseArgs = require('minimist');
 const BRIDGE_ADDRESS = '0xa9f96d8761aa05430d3ee2e7dff6b04978f13369';
 const RPC_URL = `https://${BRIDGE_ADDRESS}.fly.dev`;
 
-const argv = parseArgs(process.argv.slice(2), {string: ["token", "wallet", "blockrelay", "statuspay", "keycard", "merchant", "blockHash"], default: {"endpoint": RPC_URL, "token": "0x722dd3f80bac40c951b51bdd28dd19d435762180", maxTxDelayInBlocks: 10}});
+const argv = parseArgs(process.argv.slice(2), {string: ["token", "wallet", "blockrelay", "statuspay", "keycard", "merchant", "blockHash"], default: {"endpoint": RPC_URL, "token": "0x722dd3f80bac40c951b51bdd28dd19d435762180", maxTxDelayInBlocks: 10, minBlockDistance: 1, maxTxAmount: 1000000000000000000}});
 
 async function loadSigner(argv, signer, passfile) {
   let account = new Account(argv["endpoint"]);
@@ -47,6 +47,15 @@ function getStatusPayContract(argv, signer) {
   return getContract(argv, signer, "statuspay", "StatusPay");
 }
 
+function getMandatory(argv, opt) {
+  if (!argv[opt]) {
+    console.error(`the --${opt} option must be specified`);
+    process.exit(1);
+  }
+
+  return argv[opt];
+}
+
 function getBlockOptions(argv) {
   if (!argv["blockHash"] || !argv["blockNumber"]) {
     console.error(`the --blockHash and --blockNumber options must be specified`);
@@ -79,15 +88,31 @@ async function initStatusPay(argv, signer) {
 }
 
 async function createWallet(argv, signer) {
+  let wallet = getMandatory(argv, "wallet");
+  let statusPay = getStatusPayContract(argv, signer);
+  let keycard = argv["keycard"] || ethers.constants.AddressZero;
 
+  await signer.sendDataTx(statusPay.address, statusPay.interface.encodeFunctionData("createAccount", [wallet, keycard, argv["minBlockDistance"], argv["maxTxAmount"]]));
 }
 
 async function topup(argv, signer) {
+  let wallet = getMandatory(argv, "wallet");
+  let amount = getMandatory(argv, "amount");
+  let statusPay = getStatusPayContract(argv, signer);
 
+  argv["token"] = await statusPay.token();
+  let erc20 = getERC20Contract(argv, signer);
+
+  await signer.sendDataTx(erc20.address, erc20.interface.encodeFunctionData("approve", [statusPay.address, amount]));
+  await signer.sendDataTx(statusPay.address, statusPay.interface.encodeFunctionData("topup", [wallet, amount]));
 }
 
 async function withdraw(argv, signer) {
+  let wallet = getMandatory(argv, "wallet");
+  let amount = getMandatory(argv, "amount");
+  let statusPay = getStatusPayContract(argv, signer);
 
+  await signer.sendDataTx(statusPay.address, statusPay.interface.encodeFunctionData("withdraw", [wallet, amount]));
 }
 
 async function payment(argv, signer) {
