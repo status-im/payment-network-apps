@@ -124,7 +124,7 @@ async function info(argv, signer) {
   if (argv["keycard"]) {
     argv["wallet"] = await statusPay.keycards(argv["keycard"]);
     if (argv["wallet"] == ethers.constants.AddressZero) {
-      console.log(`Keycard ${argv["wallet"]} has no associated account\n`);
+      console.log(`Keycard ${argv["keycard"]} has no associated account\n`);
       argv["wallet"] = null;
     }
   }
