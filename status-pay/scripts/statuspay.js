@@ -8,6 +8,30 @@ const RPC_URL = `https://${BRIDGE_ADDRESS}.fly.dev`;
 
 const argv = parseArgs(process.argv.slice(2), {string: ["token", "wallet", "blockrelay", "statuspay", "keycard", "merchant", "blockHash"], default: {"endpoint": RPC_URL, "token": "0x722dd3f80bac40c951b51bdd28dd19d435762180", maxTxDelayInBlocks: 10, minBlockDistance: 1, maxTxAmount: 1000000000000000000}});
 
+const PAYMENT_TYPED_DATA = {
+  types: {
+    EIP712Domain: [
+      { name: "name", type: "string" },
+      { name: "version", type: "string" },
+      { name: "chainId", type: "uint256" },
+      { name: "verifyingContract", type: "address" }
+    ],
+    Payment: [
+      { name: "blockNumber", type: "uint256" },
+      { name: "blockHash", type: "bytes32" },
+      { name: "amount", type: "uint256" },
+      { name: "to", type: "address" }
+    ]
+  },
+  primaryType: "Payment",
+  domain: {
+    name: "StatusPay",
+    version: "1",
+    chainId: 3,
+    verifyingContract: statusPay.address
+  }
+};
+
 async function loadSigner(argv, signer, passfile) {
   let account = new Account(argv["endpoint"]);
 
@@ -116,7 +140,20 @@ async function withdraw(argv, signer) {
 }
 
 async function payment(argv, signer) {
+  let keycardSigner = await loadSigner(argv, "keycardsigner", "keycardpassfile");
+  let statusPay = getStatusPayContract(argv, signer);
+  let merchant = getMandatory(argv, "merchant");
+  let amount = getMandatory(argv, "amount");
 
+  argv["blockrelay"] = await statusPay.blockRelay();
+  let blockRelay = getBlockRelayContract(argv, signer);
+  let blockNumber = await blockRelay.getLast();
+  let blockHash = await blockRelay.getHash(blockNumber);
+
+  let message = {blockNumber: blockNumber, blockHash: blockHash, amount: amount, to: merchant};
+  let sig = keycardSigner.signTypedData(message, PAYMENT_TYPED_DATA);
+
+  await signer.sendDataTx(statusPay.address, statusPay.interface.encodeFunctionData("requestPayment", [message, sig]));
 }
 
 async function info(argv, signer) {
