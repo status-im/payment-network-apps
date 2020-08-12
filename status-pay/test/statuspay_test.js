@@ -12,6 +12,8 @@ const zeroAddress = "0x0000000000000000000000000000000000000000";
 const seed = bip39.mnemonicToSeedSync("candy maple cake sugar pudding cream honey rich smooth crumble sweet treat");
 const hdk = hdkey.fromMasterSeed(seed);
 
+const CHAIN_ID = 1; //for now 1
+
 contract('StatusPay', (accounts) => {
   const owner = accounts[0];
   const keycard = accounts[1];
@@ -222,7 +224,7 @@ contract('StatusPay', (accounts) => {
     let domainData = {
       name: "StatusPay",
       version: "1",
-      chainId: 3,
+      chainId: CHAIN_ID,
       verifyingContract: statusPay.address
     };
 

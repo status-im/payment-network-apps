@@ -4,6 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import "./IERC20.sol";
 import "./IBlockRelay.sol";
+import "./EVMUtils.sol";
 
 contract StatusPay {
   event NewPayment(address to, uint256 amount);
@@ -25,7 +26,6 @@ contract StatusPay {
 
   bytes32 constant EIP712DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
   bytes32 constant PAYMENT_TYPEHASH = keccak256("Payment(uint256 blockNumber,bytes32 blockHash,uint256 amount,address to)");
-  uint256 constant CHAIN_ID = 3;
   bytes32 DOMAIN_SEPARATOR;
 
   uint256 public maxTxDelayInBlocks;
@@ -51,7 +51,7 @@ contract StatusPay {
       EIP712DOMAIN_TYPEHASH,
       keccak256("StatusPay"),
       keccak256("1"),
-      CHAIN_ID,
+      EVMUtils.getChainID(),
       address(this)
     ));
   }
@@ -128,7 +128,7 @@ contract StatusPay {
   }
 
   function requestPayment(Payment memory _payment, bytes memory _signature) public {
-    address signer = recoverSigner(_payment, _signature);
+    address signer = EVMUtils.recoverSigner(EVMUtils.eip712Hash(DOMAIN_SEPARATOR, hash(_payment)), _signature);
     Account storage payer = accounts[keycards[signer]];
 
     // allow direct payment without Keycard from owner
@@ -182,34 +182,5 @@ contract StatusPay {
       _payment.amount,
       _payment.to
     ));
-  }
-
-  function recoverSigner(Payment memory _payment, bytes memory _sig) internal view returns (address) {
-    require(_sig.length == 65, "bad signature length");
-
-    bytes32 r;
-    bytes32 s;
-    uint8 v;
-
-	  // solium-disable-next-line security/no-inline-assembly
-    assembly {
-      r := mload(add(_sig, 32))
-      s := mload(add(_sig, 64))
-      v := byte(0, mload(add(_sig, 96)))
-    }
-
-    if (v < 27) {
-      v += 27;
-    }
-
-    require(v == 27 || v == 28, "signature version doesn't match");
-
-    bytes32 digest = keccak256(abi.encodePacked(
-      "\x19\x01",
-      DOMAIN_SEPARATOR,
-      hash(_payment)
-    ));
-
-    return ecrecover(digest, v, r, s);
   }
 }
