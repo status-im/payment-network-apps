@@ -3,15 +3,24 @@
   "version": "0.0.1",
   "description": "Status Payment Network",
   "scripts": {
+    "clean": "rimraf build",
     "test": "truffle test",
-    "compile": "truffle compile"
+    "compile": "truffle compile",
+    "build:ovm": "DEBUG=info*,warn*,error* truffle compile --config truffle-config-ovm.js",
+    "test:ovm": "DEBUG=info*,warn* truffle test --config truffle-config-ovm.js",
+    "all:ovm": "yarn clean && yarn build:ovm && yarn test:ovm"
   },
   "license": "MIT",
   "dependencies": {
+    "@eth-optimism/ovm-truffle-provider-wrapper": "^0.0.1-alpha.27",
+    "@eth-optimism/rollup-full-node": "^0.0.1-alpha.29",
+    "@eth-optimism/solc": "^0.5.16-alpha.0",
+    "solc": "0.5.16",
     "eth-sig-util": "^2.5.3",
     "ethers": "^5.0.7",
     "minimist": "^1.2.5",
-    "truffle": "^5.1.34"
+    "truffle": "^5.1.34",
+    "truffle-hdwallet-provider": "^1.0.17"
   },
   "devDependencies": {
     "bip39": "^3.0.2",
