@@ -8,11 +8,17 @@ contract KeycardWalletFactory is KeycardRegistry {
   mapping(address => address[]) public ownersWallets;
   mapping(address => address) public keycardsWallets;
   address public currency;
+  address public blockRelay;
+  address public owner;
 
   event NewWallet(KeycardWallet wallet);
 
-  constructor(address _currency) public {
+  function init(address _currency, address _blockRelay) public {
+    require(owner == address(0), "this function can only be invoked once");
+
+    owner = msg.sender;
     currency = _currency;
+    blockRelay = _blockRelay;
   }
 
   function create(address _keycard, bool _keycardIsOwner, uint256 _minBlockDistance, uint256 _txMaxAmount) public {
@@ -20,9 +26,10 @@ contract KeycardWalletFactory is KeycardRegistry {
 
     require(keycardsWallets[_keycard] == address(0), "the keycard is already associated to a wallet");
 
-    KeycardWallet wallet = new KeycardWallet(owner, _keycard, address(this), _minBlockDistance, currency, _txMaxAmount);
+    KeycardWallet wallet = new KeycardWallet();
     ownersWallets[owner].push(address(wallet));
     keycardsWallets[_keycard] = address(wallet);
+    wallet.init(owner, _keycard, address(this), blockRelay, _minBlockDistance, currency, _txMaxAmount);
     emit NewWallet(wallet);
   }
 

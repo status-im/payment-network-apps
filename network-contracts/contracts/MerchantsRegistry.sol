@@ -9,7 +9,8 @@ contract MerchantsRegistry {
     _;
   }
 
-  constructor() public {
+  function init() public {
+    require(owner == address(0), "this function can only be invoked once");
     owner = msg.sender;
   }
 
