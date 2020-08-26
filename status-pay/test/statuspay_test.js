@@ -76,8 +76,9 @@ contract('StatusPay', (accounts) => {
     await statusPay.topup(owner, 100, {from: owner});
     await block.addBlock(501, "0xbababababaabaabaaaacaabaaaaaaadaaadcaaadaaaaaaacaaaaaaddeaaaaaaa", {from: network});
 
+    let account = await statusPay.owners.call(owner);
     assert.equal((await token.balanceOf.call(owner)).toNumber(), 0);
-    assert.equal((await statusPay.accounts.call(owner)).balance.toNumber(), 100);
+    assert.equal((await statusPay.accounts.call(account)).balance.toNumber(), 100);
   });
 
   it('topup exceed ERC20 balance', async () => {
@@ -90,8 +91,9 @@ contract('StatusPay', (accounts) => {
       assert(err.reason == "transfer failed" || err.reason == "ERC20: transfer amount exceeds balance");
     }
 
+    let account = await statusPay.owners.call(owner);
     assert.equal((await token.balanceOf.call(owner)).toNumber(), 0);
-    assert.equal((await statusPay.accounts.call(owner)).balance.toNumber(), 100);
+    assert.equal((await statusPay.accounts.call(account)).balance.toNumber(), 100);
   });
 
   it('topup account non-existing account', async () => {
@@ -138,8 +140,11 @@ contract('StatusPay', (accounts) => {
     assert.equal(event.args.to, merchant);
     assert.equal(event.args.amount, 10);
 
-    assert.equal((await statusPay.accounts.call(owner)).balance.toNumber(), 90);
-    assert.equal((await statusPay.accounts.call(merchant)).balance.toNumber(), 10);
+    let buyerAcc = await statusPay.owners.call(owner);
+    let merchantAcc = await statusPay.owners.call(merchant);
+
+    assert.equal((await statusPay.accounts.call(buyerAcc)).balance.toNumber(), 90);
+    assert.equal((await statusPay.accounts.call(merchantAcc)).balance.toNumber(), 10);
   });
 
   it('requestPayment without waiting for cooldown', async () => {
@@ -164,8 +169,9 @@ contract('StatusPay', (accounts) => {
   it('withdraw', async () => {
     await statusPay.withdraw(owner, 80, {from: owner});
 
+    let account = await statusPay.owners.call(owner);
     assert.equal((await token.balanceOf.call(owner)).toNumber(), 80);
-    assert.equal((await statusPay.accounts.call(owner)).balance.toNumber(), 10);
+    assert.equal((await statusPay.accounts.call(account)).balance.toNumber(), 10);
   });
 
   it('withdraw more than balance allows', async () => {
@@ -176,8 +182,9 @@ contract('StatusPay', (accounts) => {
       assert.equal(err.reason, "not enough balance");
     }
 
+    let account = await statusPay.owners.call(owner);
     assert.equal((await token.balanceOf.call(owner)).toNumber(), 80);
-    assert.equal((await statusPay.accounts.call(owner)).balance.toNumber(), 10);
+    assert.equal((await statusPay.accounts.call(account)).balance.toNumber(), 10);
   });
 
   it('withdraw non existing account', async () => {

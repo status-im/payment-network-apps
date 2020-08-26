@@ -32,8 +32,10 @@ contract StatusPay {
   IBlockRelay public blockRelay;
   IERC20 public token;
   address public networkOwner;
+  uint256 public nextAccount;
 
   mapping(address => address) public keycards;
+  mapping(address => address) public owners;
   mapping(address => Account) public accounts;
 
   function init(address _blockRelay, address _token, uint256 _maxDelayInBlocks) public {
@@ -42,6 +44,7 @@ contract StatusPay {
     networkOwner = msg.sender;
     blockRelay = IBlockRelay(_blockRelay);
     token = IERC20(_token);
+    nextAccount = 1;
 
     require(_maxDelayInBlocks <= blockRelay.historySize(), "max delay cannot be more than history size");
 
@@ -58,9 +61,11 @@ contract StatusPay {
 
   function createAccount(address _owner, address _keycard, uint256 _minBlockDistance, uint256 _maxTxAmount) public {
     require(networkOwner == msg.sender, "only the network owner can create accounts");
+    require(owners[_owner] == address(0), "already exists");
 
-    Account storage account = accounts[_owner];
-    require(!account.exists, "already exists");
+    Account storage account = accounts[address(nextAccount)];
+    owners[_owner] = address(nextAccount);
+    nextAccount++;
 
     if (_keycard != address(0)) {
       _addKeycard(_keycard, _owner);
@@ -72,28 +77,12 @@ contract StatusPay {
     account.maxTxAmount = _maxTxAmount;
   }
 
-  function transferAccount(address _newOwner, address _keycard) public {
-    Account storage oldAcc = accounts[msg.sender];
-    require(oldAcc.exists, "account to transfer does not exist");
+  function transferAccount(address _newOwner) public {
+    require(owners[msg.sender] != address(0), "account to transfer does not exist");
+    require(owners[_newOwner] == address(0), "the new owner already has an account");
 
-    Account storage newAcc = accounts[_newOwner];
-    require(!newAcc.exists, "the new owner already has an account");
-
-    newAcc.exists = true;
-    newAcc.balance = oldAcc.balance;
-    newAcc.lastUsedBlock = oldAcc.lastUsedBlock;
-    newAcc.minBlockDistance = oldAcc.minBlockDistance;
-    newAcc.maxTxAmount = oldAcc.maxTxAmount;
-
-    oldAcc.exists = false;
-    oldAcc.balance = 0;
-    oldAcc.lastUsedBlock = 0;
-    oldAcc.minBlockDistance = 0;
-    oldAcc.maxTxAmount = 0;
-
-    if (_keycard != address(0)) {
-      _addKeycard(_keycard, _newOwner);
-    }
+    owners[_newOwner] = owners[msg.sender];
+    owners[msg.sender] = address(0);
   }
 
   function addKeycard(address _keycard) public {
@@ -102,16 +91,16 @@ contract StatusPay {
 
   function _addKeycard(address _keycard, address _owner) internal {
     require(!accounts[keycards[_keycard]].exists, "keycard already assigned");
-    keycards[_keycard] = _owner;
+    keycards[_keycard] = owners[_owner];
   }
 
   function removeKeycard(address _keycard) public {
-    require(keycards[_keycard] == msg.sender, "keycard not owned");
+    require(keycards[_keycard] == owners[msg.sender], "keycard not owned");
     keycards[_keycard] = address(0);
   }
 
   function topup(address _to, uint256 _amount) public {
-    Account storage topped = accounts[_to];
+    Account storage topped = accounts[owners[_to]];
     require(topped.exists, "account does not exist");
     require(token.transferFrom(msg.sender, address(this), _amount), "transfer failed");
 
@@ -119,7 +108,7 @@ contract StatusPay {
   }
 
   function withdraw(address _to, uint256 _amount) public {
-    Account storage exiting = accounts[msg.sender];
+    Account storage exiting = accounts[owners[msg.sender]];
     require(exiting.exists, "account does not exist");
     require(exiting.balance >= _amount, "not enough balance");
 
@@ -133,7 +122,7 @@ contract StatusPay {
 
     // allow direct payment without Keycard from owner
     if (!payer.exists) {
-      payer = accounts[signer];
+      payer = accounts[owners[signer]];
     }
 
     // check that a keycard is associated to this account
@@ -141,6 +130,12 @@ contract StatusPay {
 
     // check that the payee exists
     Account storage payee = accounts[_payment.to];
+
+    // allow payment through owner address
+    if (!payee.exists) {
+      payee = accounts[owners[_payment.to]];
+    }
+
     require(payee.exists, "payee account does not exist");
 
     // check that _payment.amount is not greater than the maxTxValue for this currency

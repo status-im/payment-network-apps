@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.5.0 <0.7.0;
-pragma experimental ABIEncoderV2;
 
 library EVMUtils {
   function eip712Hash(bytes32 _domainSeparator, bytes32 _messageHash) internal pure returns (bytes32) {
