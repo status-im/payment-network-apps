@@ -1,4 +1,4 @@
-const ERC20 = artifacts.require('ERC20');
+const ERC20 = artifacts.require('TestERC20');
 const BlockRelay = artifacts.require('BlockRelay');
 const StatusPay = artifacts.require('StatusPay');
 
@@ -87,7 +87,7 @@ contract('StatusPay', (accounts) => {
       await statusPay.topup(owner, 100, {from: owner});
       assert.fail("topup should have failed");
     } catch (err) {
-      assert(err.reason == "transfer failed" || err.reason == "balance or allowance exceeded");
+      assert(err.reason == "transfer failed" || err.reason == "ERC20: transfer amount exceeds balance");
     }
 
     assert.equal((await token.balanceOf.call(owner)).toNumber(), 0);
