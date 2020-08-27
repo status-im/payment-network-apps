@@ -10,7 +10,7 @@ contract BlockRelay is IBlockRelay {
 
   uint256 constant HISTORY_SIZE = 50;
 
-  function init(uint256 _firstBlock, bytes32 _firstHash) public {
+  function initialize(uint256 _firstBlock, bytes32 _firstHash) public {
     require(owner == address(0), "already done");
     owner = msg.sender;
     addBlock(_firstBlock, _firstHash);

@@ -38,7 +38,7 @@ contract StatusPay {
   mapping(address => address) public owners;
   mapping(address => Account) public accounts;
 
-  function init(address _blockRelay, address _token, uint256 _maxDelayInBlocks) public {
+  function initialize(address _blockRelay, address _token, uint256 _maxDelayInBlocks) public {
     require(networkOwner == address(0), "already done");
 
     networkOwner = msg.sender;

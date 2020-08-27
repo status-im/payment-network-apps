@@ -1,3 +1,5 @@
+const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
+
 const ERC20 = artifacts.require('TestERC20');
 const BlockRelay = artifacts.require('BlockRelay');
 const StatusPay = artifacts.require('StatusPay');
@@ -15,21 +17,17 @@ const hdk = hdkey.fromMasterSeed(seed);
 const CHAIN_ID = 1; //for now 1
 
 contract('StatusPay', (accounts) => {
-  const owner = accounts[0];
+  const network = accounts[0];
   const keycard = accounts[1];
   const merchant = accounts[2];
-  const network = accounts[3];
+  const owner = accounts[3];
 
   before(async () => {
     keycardKey = deriveKey(1, keycard);
 
-    token = await ERC20.new({from: network});
-    block = await BlockRelay.new({from: network});
-    statusPay = await StatusPay.new({from: network});
-
-    await token.init(10000, {from: network});
-    await block.init(500, "0xbababababaabaabaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", {from: network});
-    await statusPay.init(block.address, token.address, 10, {from: network});
+    token = await deployProxy(ERC20, [10000]);
+    block = await deployProxy(BlockRelay, [500, "0xbababababaabaabaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]);
+    statusPay = await deployProxy(StatusPay, [block.address, token.address, 10], {unsafeAllowCustomTypes: true});
 
     await token.transfer(owner, 100, {from: network});
   });
