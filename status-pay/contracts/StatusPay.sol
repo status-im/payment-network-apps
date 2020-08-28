@@ -60,7 +60,6 @@ contract StatusPay {
   }
 
   function createAccount(address _owner, address _keycard, uint256 _minBlockDistance, uint256 _maxTxAmount) public {
-    require(networkOwner == msg.sender, "only the network owner can create accounts");
     require(owners[_owner] == address(0), "already exists");
 
     Account storage account = accounts[address(nextAccount)];
@@ -117,7 +116,7 @@ contract StatusPay {
   }
 
   function requestPayment(Payment memory _payment, bytes memory _signature) public {
-    address signer = EVMUtils.recoverSigner(EVMUtils.eip712Hash(DOMAIN_SEPARATOR, hash(_payment)), _signature);
+    address signer = EVMUtils.recoverSigner(EVMUtils.eip712Hash(DOMAIN_SEPARATOR, hashPayment(_payment)), _signature);
     Account storage payer = accounts[keycards[signer]];
 
     // allow direct payment without Keycard from owner
@@ -169,7 +168,7 @@ contract StatusPay {
     emit NewPayment(_payment.to, _payment.amount);
   }
 
-  function hash(Payment memory _payment) internal pure returns (bytes32) {
+  function hashPayment(Payment memory _payment) internal pure returns (bytes32) {
     return keccak256(abi.encode(
       PAYMENT_TYPEHASH,
       _payment.blockNumber,
