@@ -75,7 +75,7 @@
           {
             "contract": "MinterRole",
             "label": "_minters",
-            "type": "t_struct(Role)1593_storage",
+            "type": "t_struct(Role)1660_storage",
             "src": "../@openzeppelin/contracts-ethereum-package/contracts/access/roles/MinterRole.sol:14"
           },
           {
@@ -93,7 +93,7 @@
           {
             "contract": "PauserRole",
             "label": "_pausers",
-            "type": "t_struct(Role)1593_storage",
+            "type": "t_struct(Role)1660_storage",
             "src": "../@openzeppelin/contracts-ethereum-package/contracts/access/roles/PauserRole.sol:14"
           },
           {
@@ -128,7 +128,7 @@
           "t_bool": {
             "label": "bool"
           },
-          "t_struct(Role)1593_storage": {
+          "t_struct(Role)1660_storage": {
             "label": "struct Roles.Role"
           },
           "t_mapping(t_address,t_uint256)": {
@@ -186,9 +186,9 @@
         }
       }
     },
-    "91166b855391fc4f4da30af91b54ddaba58d7cdce030ac07003ccd65fe50f3fe": {
+    "464b1c4a9d7315d48db5941a2e63a860676fa587f84575e027290deb436effc0": {
       "address": "0x30753E4A8aad7F8597332E813735Def5dD395028",
-      "txHash": "0x2bc4a839eeb03e8515b93b942535c30949031734b30e1c56c8c431688b4793a5",
+      "txHash": "0xf279aaac3b80363a934e48cc1face38096c6429b216cf7e6e8fd9b43a296544f",
       "layout": {
         "storage": [
           {
@@ -212,7 +212,7 @@
           {
             "contract": "StatusPay",
             "label": "token",
-            "type": "t_contract(IERC20)2925",
+            "type": "t_contract(IERC20)2992",
             "src": "StatusPay.sol:33"
           },
           {
@@ -262,7 +262,7 @@
           "t_contract(IBlockRelay)226": {
             "label": "contract IBlockRelay"
           },
-          "t_contract(IERC20)2925": {
+          "t_contract(IERC20)2992": {
             "label": "contract IERC20"
           },
           "t_address": {

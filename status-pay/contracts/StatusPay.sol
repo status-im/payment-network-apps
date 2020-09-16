@@ -120,6 +120,22 @@ contract StatusPay {
     topped.balance += _amount;
   }
 
+  function topupKeycard(address _keycard, uint256 _amount) public {
+    _topup(keycards[_keycard], _amount);
+  }
+
+  function topup(uint256 _amount) public {
+    _topup(owners[msg.sender], _amount);
+  }
+
+  function _topup(address _id, uint256 _amount) internal {
+    Account storage topped = accounts[_id];
+    require(topped.exists, "account does not exist");
+    require(token.transferFrom(msg.sender, address(this), _amount), "transfer failed");
+
+    topped.balance += _amount;
+  }
+
   function withdraw(address _to, uint256 _amount) public {
     Account storage exiting = accounts[owners[msg.sender]];
     require(exiting.exists, "account does not exist");

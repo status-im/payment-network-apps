@@ -17,7 +17,7 @@ contract StatusPayBucket {
   uint256 public maxTxAmount;
   bool public destroyed;
 
-  bytes32 constant REDEEM_TYPEHASH = keccak256("Redeem(uint256 blockNumber,bytes32 blockHash,address receiver,bytes32 code)");
+  bytes32 constant REDEEM_TYPEHASH = keccak256("Redeem(uint256 blockNumber,bytes32 blockHash,bytes32 code)");
   bytes32 constant EIP712DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
   bytes32 DOMAIN_SEPARATOR;
 
@@ -31,7 +31,6 @@ contract StatusPayBucket {
   struct Redeem {
     uint256 blockNumber;
     bytes32 blockHash;
-    address receiver;
     bytes32 code;
   }
 
@@ -105,7 +104,6 @@ contract StatusPayBucket {
       REDEEM_TYPEHASH,
       _redeem.blockNumber,
       _redeem.blockHash,
-      _redeem.receiver,
       _redeem.code
     ));
   }
@@ -143,12 +141,12 @@ contract StatusPayBucket {
     require(redeemableSupply >= _redeemable.data, "not enough redeemable supply");
     redeemableSupply -= _redeemable.data;
 
-    if (statusPay.owners(_redeem.receiver) == address(0)) {
+    if (statusPay.keycards(_redeemable.recipient) == address(0)) {
       statusPay.createRedeemableAccount(_redeemable.recipient, minBlockDistance, maxTxAmount, _redeemable.accountCode);
     }
 
     statusPay.token().approve(address(statusPay), _redeemable.data);
-    statusPay.topup(_redeem.receiver, _redeemable.data);
+    statusPay.topupKeycard(_redeemable.recipient, _redeemable.data);
   }
 
   function transferRedeemablesToOwner() internal {

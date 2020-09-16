@@ -70,9 +70,18 @@ contract('StatusPay', (accounts) => {
   });
 
   it('topup account', async () => {
-    await token.approve(statusPay.address, 100, {from: owner});
-    await statusPay.topup(owner, 100, {from: owner});
+    await token.approve(statusPay.address, 50, {from: owner});
+    await statusPay.topup(50, {from: owner});
     await block.addBlock(501, "0xbababababaabaabaaaacaabaaaaaaadaaadcaaadaaaaaaacaaaaaaddeaaaaaaa", {from: network});
+
+    let account = await statusPay.owners.call(owner);
+    assert.equal((await token.balanceOf.call(owner)).toNumber(), 50);
+    assert.equal((await statusPay.accounts.call(account)).balance.toNumber(), 50);
+  });
+
+  it('topup account via Keycard', async () => {
+    await token.approve(statusPay.address, 50, {from: owner});
+    await statusPay.topupKeycard(keycard, 50, {from: owner});
 
     let account = await statusPay.owners.call(owner);
     assert.equal((await token.balanceOf.call(owner)).toNumber(), 0);
@@ -83,7 +92,7 @@ contract('StatusPay', (accounts) => {
     await token.approve(statusPay.address, 100, {from: owner});
 
     try {
-      await statusPay.topup(owner, 100, {from: owner});
+      await statusPay.topup(100, {from: owner});
       assert.fail("topup should have failed");
     } catch (err) {
       assert(err.reason == "transfer failed" || err.reason == "ERC20: transfer amount exceeds balance");
@@ -96,7 +105,7 @@ contract('StatusPay', (accounts) => {
 
   it('topup account non-existing account', async () => {
     try {
-      await statusPay.topup(network, 100, {from: network});
+      await statusPay.topup(100, {from: network});
       assert.fail("topup should have failed");
     } catch (err) {
       assert.equal(err.reason, "account does not exist");
