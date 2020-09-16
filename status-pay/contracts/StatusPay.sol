@@ -36,6 +36,7 @@ contract StatusPay {
 
   mapping(address => address) public keycards;
   mapping(address => address) public owners;
+  mapping(bytes32 => address) public codes;
   mapping(address => Account) public accounts;
 
   function initialize(address _blockRelay, address _token, uint256 _maxDelayInBlocks) public {
@@ -59,15 +60,25 @@ contract StatusPay {
     ));
   }
 
-  function createAccount(address _owner, address _keycard, uint256 _minBlockDistance, uint256 _maxTxAmount) public {
-    require(owners[_owner] == address(0), "already exists");
+  function createAccount(address _keycard, uint256 _minBlockDistance, uint256 _maxTxAmount) public {
+    require(owners[msg.sender] == address(0), "already exists");
+    owners[msg.sender] = address(nextAccount);
+    _createAccount(_keycard, _minBlockDistance, _maxTxAmount);
+  }
 
-    Account storage account = accounts[address(nextAccount)];
-    owners[_owner] = address(nextAccount);
+  function createRedeemableAccount(address _keycard, uint256 _minBlockDistance, uint256 _maxTxAmount, bytes32 _code) public {
+    require(codes[_code] == address(0), "code must be unique");
+    codes[_code] = address(nextAccount);
+    _createAccount(_keycard, _minBlockDistance, _maxTxAmount);
+  }
+
+  function _createAccount(address _keycard, uint256 _minBlockDistance, uint256 _maxTxAmount) internal {
+    address accountAddr = address(nextAccount);
     nextAccount++;
+    Account storage account = accounts[accountAddr];
 
     if (_keycard != address(0)) {
-      _addKeycard(_keycard, _owner);
+      _addKeycard(_keycard, accountAddr);
     }
 
     account.exists = true;
@@ -85,12 +96,15 @@ contract StatusPay {
   }
 
   function addKeycard(address _keycard) public {
-    _addKeycard(_keycard, msg.sender);
+    address account = owners[msg.sender];
+    require(account != address(0), "no account for this address");
+
+    _addKeycard(_keycard, account);
   }
 
-  function _addKeycard(address _keycard, address _owner) internal {
+  function _addKeycard(address _keycard, address _account) internal {
     require(!accounts[keycards[_keycard]].exists, "keycard already assigned");
-    keycards[_keycard] = owners[_owner];
+    keycards[_keycard] = _account;
   }
 
   function removeKeycard(address _keycard) public {

@@ -42,7 +42,7 @@ contract('StatusPay', (accounts) => {
   });
 
   it('creates buyer account', async () => {
-    await statusPay.createAccount(owner, keycard, 1, 10, {from: network});
+    await statusPay.createAccount(keycard, 1, 10, {from: owner});
     assert.equal((await statusPay.accounts.call(owner)).balance.toNumber(), 0);
   });
 
@@ -56,7 +56,7 @@ contract('StatusPay', (accounts) => {
   });
 
   it('creates merchant account', async () => {
-    await statusPay.createAccount(merchant, zeroAddress, 1, 1000, {from: network});
+    await statusPay.createAccount(zeroAddress, 1, 1000, {from: merchant});
     assert.equal((await statusPay.accounts.call(merchant)).balance.toNumber(), 0);
   });
 

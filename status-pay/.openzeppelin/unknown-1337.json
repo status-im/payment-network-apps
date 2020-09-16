@@ -75,7 +75,7 @@
           {
             "contract": "MinterRole",
             "label": "_minters",
-            "type": "t_struct(Role)1509_storage",
+            "type": "t_struct(Role)1593_storage",
             "src": "../@openzeppelin/contracts-ethereum-package/contracts/access/roles/MinterRole.sol:14"
           },
           {
@@ -93,7 +93,7 @@
           {
             "contract": "PauserRole",
             "label": "_pausers",
-            "type": "t_struct(Role)1509_storage",
+            "type": "t_struct(Role)1593_storage",
             "src": "../@openzeppelin/contracts-ethereum-package/contracts/access/roles/PauserRole.sol:14"
           },
           {
@@ -128,7 +128,7 @@
           "t_bool": {
             "label": "bool"
           },
-          "t_struct(Role)1509_storage": {
+          "t_struct(Role)1593_storage": {
             "label": "struct Roles.Role"
           },
           "t_mapping(t_address,t_uint256)": {
@@ -186,9 +186,9 @@
         }
       }
     },
-    "46dce7854b480c77d86145468f58d172e2bba136ded4d1b31c9ae1c3539d64d0": {
+    "91166b855391fc4f4da30af91b54ddaba58d7cdce030ac07003ccd65fe50f3fe": {
       "address": "0x30753E4A8aad7F8597332E813735Def5dD395028",
-      "txHash": "0xef5c7b5f24e447a4de6469ae3caff727f0de75fed646907251d143a07eb26808",
+      "txHash": "0x2bc4a839eeb03e8515b93b942535c30949031734b30e1c56c8c431688b4793a5",
       "layout": {
         "storage": [
           {
@@ -212,7 +212,7 @@
           {
             "contract": "StatusPay",
             "label": "token",
-            "type": "t_contract(IERC20)2841",
+            "type": "t_contract(IERC20)2925",
             "src": "StatusPay.sol:33"
           },
           {
@@ -241,9 +241,15 @@
           },
           {
             "contract": "StatusPay",
+            "label": "codes",
+            "type": "t_mapping(t_bytes32,t_address)",
+            "src": "StatusPay.sol:39"
+          },
+          {
+            "contract": "StatusPay",
             "label": "accounts",
             "type": "t_mapping(t_address,t_struct(Account)295_storage)",
-            "src": "StatusPay.sol:39"
+            "src": "StatusPay.sol:40"
           }
         ],
         "types": {
@@ -256,7 +262,7 @@
           "t_contract(IBlockRelay)226": {
             "label": "contract IBlockRelay"
           },
-          "t_contract(IERC20)2841": {
+          "t_contract(IERC20)2925": {
             "label": "contract IERC20"
           },
           "t_address": {
@@ -264,6 +270,9 @@
           },
           "t_mapping(t_address,t_address)": {
             "label": "mapping(address => address)"
+          },
+          "t_mapping(t_bytes32,t_address)": {
+            "label": "mapping(bytes32 => address)"
           },
           "t_mapping(t_address,t_struct(Account)295_storage)": {
             "label": "mapping(address => struct StatusPay.Account)"

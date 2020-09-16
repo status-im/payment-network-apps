@@ -24,6 +24,7 @@ contract StatusPayBucket {
   struct Redeemable {
     address recipient;
     bytes32 code;
+    bytes32 accountCode;
     uint256 data;
   }
 
@@ -74,13 +75,13 @@ contract StatusPayBucket {
     require(block.timestamp < expirationTime, "expired redeemable");
     require(block.timestamp > startTime, "reedeming not yet started");
 
-    address recipient =  EVMUtils.recoverSigner(EVMUtils.eip712Hash(DOMAIN_SEPARATOR, hashRedeem(_redeem)), _sig);
+    address recipient = EVMUtils.recoverSigner(EVMUtils.eip712Hash(DOMAIN_SEPARATOR, hashRedeem(_redeem)), _sig);
 
     Redeemable storage redeemable = redeemables[recipient];
     require(redeemable.recipient == recipient, "not found");
 
     // validate code
-    bytes32 codeHash = keccak256(abi.encodePacked(_redeem.code));
+    bytes32 codeHash = keccak256(abi.encodePacked(DOMAIN_SEPARATOR, redeemable.recipient, _redeem.code));
     require(codeHash == redeemable.code, "invalid code");
 
     transferRedeemable(redeemable, _redeem);
@@ -115,12 +116,12 @@ contract StatusPayBucket {
 
   function availableSupply() public view returns(uint256) {
     uint256 _totalSupply = this.totalSupply();
-    require(_totalSupply >= redeemableSupply, "redeemableSupply is greater than redeemableSupply");
+    require(_totalSupply >= redeemableSupply, "redeemableSupply is greater than totalSupply");
 
     return _totalSupply - redeemableSupply;
   }
 
-  function createRedeemable(address _recipient, uint256 _amount, bytes32 _code) external onlyOwner {
+  function createRedeemable(address _recipient, uint256 _amount, bytes32 _code, bytes32 _accountCode) external onlyOwner {
     require(_amount > 0, "invalid amount");
 
     uint256 _availableSupply = this.availableSupply();
@@ -131,6 +132,7 @@ contract StatusPayBucket {
 
     redeemable.recipient = _recipient;
     redeemable.code = _code;
+    redeemable.accountCode = _accountCode;
     redeemable.data = _amount;
 
     require(redeemableSupply + _amount > redeemableSupply, "addition overflow");
@@ -142,7 +144,7 @@ contract StatusPayBucket {
     redeemableSupply -= _redeemable.data;
 
     if (statusPay.owners(_redeem.receiver) == address(0)) {
-      statusPay.createAccount(_redeem.receiver, _redeemable.recipient, minBlockDistance, maxTxAmount);
+      statusPay.createRedeemableAccount(_redeemable.recipient, minBlockDistance, maxTxAmount, _redeemable.accountCode);
     }
 
     statusPay.token().approve(address(statusPay), _redeemable.data);
