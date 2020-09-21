@@ -75,7 +75,7 @@
           {
             "contract": "MinterRole",
             "label": "_minters",
-            "type": "t_struct(Role)1660_storage",
+            "type": "t_struct(Role)1657_storage",
             "src": "../@openzeppelin/contracts-ethereum-package/contracts/access/roles/MinterRole.sol:14"
           },
           {
@@ -93,7 +93,7 @@
           {
             "contract": "PauserRole",
             "label": "_pausers",
-            "type": "t_struct(Role)1660_storage",
+            "type": "t_struct(Role)1657_storage",
             "src": "../@openzeppelin/contracts-ethereum-package/contracts/access/roles/PauserRole.sol:14"
           },
           {
@@ -128,7 +128,7 @@
           "t_bool": {
             "label": "bool"
           },
-          "t_struct(Role)1660_storage": {
+          "t_struct(Role)1657_storage": {
             "label": "struct Roles.Role"
           },
           "t_mapping(t_address,t_uint256)": {
@@ -212,7 +212,7 @@
           {
             "contract": "StatusPay",
             "label": "token",
-            "type": "t_contract(IERC20)2992",
+            "type": "t_contract(IERC20)2989",
             "src": "StatusPay.sol:33"
           },
           {
@@ -262,7 +262,7 @@
           "t_contract(IBlockRelay)226": {
             "label": "contract IBlockRelay"
           },
-          "t_contract(IERC20)2992": {
+          "t_contract(IERC20)2989": {
             "label": "contract IERC20"
           },
           "t_address": {

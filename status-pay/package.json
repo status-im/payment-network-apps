@@ -12,20 +12,18 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@eth-optimism/ovm-truffle-provider-wrapper": "^0.0.1-alpha.27",
-    "@eth-optimism/rollup-full-node": "^0.0.1-alpha.29",
     "@eth-optimism/solc": "^0.5.16-alpha.0",
     "@openzeppelin/cli": "^2.8.2",
     "@openzeppelin/contracts-ethereum-package": "^2.5.0",
     "eth-sig-util": "^2.5.3",
-    "ethers": "^5.0.7",
     "minimist": "^1.2.5",
     "solc": "0.5.16",
-    "truffle": "^5.1.35",
-    "truffle-hdwallet-provider": "^1.0.17"
+    "truffle": "^5.1.44",
+    "ethers": "^5.0.14"
   },
   "devDependencies": {
-    "@openzeppelin/truffle-upgrades": "^1.0.1",
+    "@eth-optimism/ovm-toolchain": "^0.0.1-alpha.2",
+    "@openzeppelin/truffle-upgrades": "^1.0.2",
     "bip39": "^3.0.2",
     "ethereumjs-wallet": "^1.0.0"
   }

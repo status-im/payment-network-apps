@@ -83,7 +83,7 @@ contract StatusPayBucket {
     bytes32 codeHash = keccak256(abi.encodePacked(DOMAIN_SEPARATOR, redeemable.recipient, _redeem.code));
     require(codeHash == redeemable.code, "invalid code");
 
-    transferRedeemable(redeemable, _redeem);
+    transferRedeemable(redeemable);
 
     emit Redeemed(recipient, redeemable.data);
 
@@ -137,7 +137,7 @@ contract StatusPayBucket {
     redeemableSupply += _amount;
   }
 
-  function transferRedeemable(Redeemable memory _redeemable, Redeem memory _redeem) internal {
+  function transferRedeemable(Redeemable memory _redeemable) internal {
     require(redeemableSupply >= _redeemable.data, "not enough redeemable supply");
     redeemableSupply -= _redeemable.data;
 
