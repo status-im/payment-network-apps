@@ -142,7 +142,7 @@ contract StatusPayBucket {
     redeemableSupply -= _redeemable.data;
 
     if (statusPay.keycards(_redeemable.recipient) == address(0)) {
-      statusPay.createRedeemableAccount(_redeemable.recipient, minBlockDistance, maxTxAmount, _redeemable.accountCode);
+      statusPay.createUnlockableAccount(_redeemable.recipient, minBlockDistance, maxTxAmount, _redeemable.accountCode);
     }
 
     statusPay.token().approve(address(statusPay), _redeemable.data);

@@ -16,6 +16,12 @@ contract StatusPay {
     address to;
   }
 
+  struct Unlock {
+    uint256 blockNumber;
+    bytes32 blockHash;
+    bytes32 code;
+  }
+
   struct Account {
     bool exists;
     uint256 balance;
@@ -26,6 +32,7 @@ contract StatusPay {
 
   bytes32 constant EIP712DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
   bytes32 constant PAYMENT_TYPEHASH = keccak256("Payment(uint256 blockNumber,bytes32 blockHash,uint256 amount,address to)");
+  bytes32 constant UNLOCK_TYPEHASH = keccak256("Unlock(uint256 blockNumber,bytes32 blockHash,bytes32 code)");
   bytes32 DOMAIN_SEPARATOR;
 
   uint256 public maxTxDelayInBlocks;
@@ -66,7 +73,7 @@ contract StatusPay {
     _createAccount(_keycard, _minBlockDistance, _maxTxAmount);
   }
 
-  function createRedeemableAccount(address _keycard, uint256 _minBlockDistance, uint256 _maxTxAmount, bytes32 _code) public {
+  function createUnlockableAccount(address _keycard, uint256 _minBlockDistance, uint256 _maxTxAmount, bytes32 _code) public {
     require(codes[_code] == address(0), "code must be unique");
     codes[_code] = address(nextAccount);
     _createAccount(_keycard, _minBlockDistance, _maxTxAmount);
@@ -145,6 +152,22 @@ contract StatusPay {
     require(token.transfer(_to, _amount), "transfer failed");
   }
 
+  function unlockAccount(Unlock memory _unlock, bytes memory _signature) public {
+    require(owners[msg.sender] == address(0), "this owner already has an account");
+    address signer = EVMUtils.recoverSigner(EVMUtils.eip712Hash(DOMAIN_SEPARATOR, hashUnlock(_unlock)), _signature);
+    address accountAddress = keycards[signer];
+
+    // check that a keycard is associated to this account
+    require(accountAddress != address(0), "no account for this Keycard");
+
+    // validate code
+    bytes32 codeHash = keccak256(abi.encodePacked(DOMAIN_SEPARATOR, signer, _unlock.code));
+    require(codes[codeHash] == signer, "invalid code");
+
+    owners[msg.sender] = accountAddress;
+    codes[codeHash] = address(0);
+  }
+
   function requestPayment(Payment memory _payment, bytes memory _signature) public {
     address signer = EVMUtils.recoverSigner(EVMUtils.eip712Hash(DOMAIN_SEPARATOR, hashPayment(_payment)), _signature);
     Account storage payer = accounts[keycards[signer]];
@@ -205,6 +228,15 @@ contract StatusPay {
       _payment.blockHash,
       _payment.amount,
       _payment.to
+    ));
+  }
+
+  function hashUnlock(Unlock memory _unlock) internal pure returns (bytes32) {
+    return keccak256(abi.encode(
+      UNLOCK_TYPEHASH,
+      _unlock.blockNumber,
+      _unlock.blockHash,
+      _unlock.code
     ));
   }
 }
