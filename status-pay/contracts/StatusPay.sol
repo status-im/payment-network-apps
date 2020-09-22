@@ -33,7 +33,7 @@ contract StatusPay {
   bytes32 constant EIP712DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
   bytes32 constant PAYMENT_TYPEHASH = keccak256("Payment(uint256 blockNumber,bytes32 blockHash,uint256 amount,address to)");
   bytes32 constant UNLOCK_TYPEHASH = keccak256("Unlock(uint256 blockNumber,bytes32 blockHash,bytes32 code)");
-  bytes32 DOMAIN_SEPARATOR;
+  bytes32 public DOMAIN_SEPARATOR;
 
   uint256 public maxTxDelayInBlocks;
   IBlockRelay public blockRelay;
@@ -157,12 +157,14 @@ contract StatusPay {
     address signer = EVMUtils.recoverSigner(EVMUtils.eip712Hash(DOMAIN_SEPARATOR, hashUnlock(_unlock)), _signature);
     address accountAddress = keycards[signer];
 
+    EVMUtils.validateAnchorBlock(blockRelay, _unlock.blockNumber, _unlock.blockHash, maxTxDelayInBlocks);
+
     // check that a keycard is associated to this account
     require(accountAddress != address(0), "no account for this Keycard");
 
     // validate code
     bytes32 codeHash = keccak256(abi.encodePacked(DOMAIN_SEPARATOR, signer, _unlock.code));
-    require(codes[codeHash] == signer, "invalid code");
+    require(codes[codeHash] == accountAddress, "invalid code");
 
     owners[msg.sender] = accountAddress;
     codes[codeHash] = address(0);
@@ -196,21 +198,10 @@ contract StatusPay {
     // check that balance is enough for this payment
     require(payer.balance >= _payment.amount, "balance is not enough");
 
-    uint256 blockNumber = blockRelay.getLast();
-
-    // check that the block number used for signing is not newer than the block number
-    require(_payment.blockNumber <= blockNumber, "transaction cannot be in the future");
-
-    // check that the block number used is not too old
-    require(_payment.blockNumber > (blockNumber - maxTxDelayInBlocks), "transaction too old");
+    uint256 blockNumber = EVMUtils.validateAnchorBlock(blockRelay, _payment.blockNumber, _payment.blockHash, maxTxDelayInBlocks);
 
     // check that the block number is not too near to the last one in which a tx has been processed
     require(_payment.blockNumber >= (payer.lastUsedBlock + payer.minBlockDistance), "cooldown period not expired yet");
-
-    // check that the blockHash is valid
-    require(_payment.blockHash == blockRelay.getHash(_payment.blockNumber), "invalid block hash");
-    // this check is redundant but provideds a safety net if the oracle returns a 0 hash
-    require(_payment.blockHash != bytes32(0), "invalid block hash");
 
     // perform transfer
     payer.balance -= _payment.amount;

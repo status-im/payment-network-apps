@@ -4,12 +4,15 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
 import "./StatusPay.sol";
+import "./IBlockRelay.sol";
 import "./EVMUtils.sol";
 
 contract StatusPayBucket {
   address payable public owner;
   uint256 public redeemableSupply;
   StatusPay public statusPay;
+  IBlockRelay public blockRelay;
+
   uint256 public expirationTime;
   uint256 public startTime;
   uint256 public maxTxDelayInBlocks;
@@ -19,7 +22,7 @@ contract StatusPayBucket {
 
   bytes32 constant REDEEM_TYPEHASH = keccak256("Redeem(uint256 blockNumber,bytes32 blockHash,bytes32 code)");
   bytes32 constant EIP712DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
-  bytes32 DOMAIN_SEPARATOR;
+  bytes32 public DOMAIN_SEPARATOR;
 
   struct Redeemable {
     address recipient;
@@ -44,12 +47,13 @@ contract StatusPayBucket {
     _;
   }
 
-  function initialize(address _statusPay, uint256 _startTime, uint256 _expirationTime, uint256 _maxTxDelayInBlocks, uint256 _minBlockDistance, uint256 _maxTxAmount) public {
+  function initialize(address _statusPay, address _blockRelay, uint256 _startTime, uint256 _expirationTime, uint256 _maxTxDelayInBlocks, uint256 _minBlockDistance, uint256 _maxTxAmount) public {
     require(owner == address(0), "already done");
     require(_maxTxDelayInBlocks > 0 && _maxTxDelayInBlocks < 256, "the valid range is 1 to 255");
     require(_expirationTime > block.timestamp, "expiration can't be in the past");
 
     statusPay = StatusPay(_statusPay);
+    blockRelay = IBlockRelay(_blockRelay);
     startTime = _startTime;
     expirationTime = _expirationTime;
     maxTxDelayInBlocks = _maxTxDelayInBlocks;
@@ -68,9 +72,7 @@ contract StatusPayBucket {
 
   function redeem(Redeem calldata _redeem, bytes calldata _sig) external {
     // validate Redeem
-    require(_redeem.blockNumber < block.number, "transaction cannot be in the future");
-    require(_redeem.blockNumber >= (block.number - maxTxDelayInBlocks), "transaction too old");
-    require(_redeem.blockHash == blockhash(_redeem.blockNumber), "invalid block hash");
+    EVMUtils.validateAnchorBlock(blockRelay, _redeem.blockNumber, _redeem.blockHash, maxTxDelayInBlocks);
     require(block.timestamp < expirationTime, "expired redeemable");
     require(block.timestamp > startTime, "reedeming not yet started");
 
