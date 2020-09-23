@@ -1,0 +1,15 @@
+{
+  "manifestVersion": "2.2",
+  "contracts": {},
+  "dependencies": {},
+  "name": "status-pay",
+  "version": "0.0.1",
+  "compiler": {
+    "compilerSettings": {
+      "optimizer": {}
+    },
+    "typechain": {
+      "enabled": false
+    }
+  }
+}
