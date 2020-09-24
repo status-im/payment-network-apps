@@ -12,7 +12,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@eth-optimism/solc": "^0.5.16-alpha.0",
+    "@eth-optimism/solc": "^0.5.16-alpha.2",
     "@openzeppelin/cli": "^2.8.2",
     "@openzeppelin/contracts-ethereum-package": "^2.5.0",
     "eth-sig-util": "^2.5.3",
