@@ -42,19 +42,4 @@ library EVMUtils {
 
     return id;
   }
-
-  function validateAnchorBlock(IBlockRelay _blockRelay, uint256 _blockNumber, bytes32 _blockHash, uint256 _maxTxDelayInBlocks) internal view returns (uint256) {
-    uint256 blockNumber = _blockRelay.getLast();
-
-    // check that the block number used for signing is not newer than the block number
-    require(_blockNumber <= blockNumber, "transaction cannot be in the future");
-
-    // check that the block number used is not too old
-    require(_blockNumber > (blockNumber - _maxTxDelayInBlocks), "transaction too old");
-
-    // check that the blockHash is valid
-    require(_blockHash == _blockRelay.getHash(_blockNumber), "invalid block hash");
-
-    return blockNumber;
-  }
 }

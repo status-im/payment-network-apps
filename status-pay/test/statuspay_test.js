@@ -17,6 +17,7 @@ const hdk = hdkey.fromMasterSeed(seed);
 
 const CHAIN_ID = 1; //for now 1
 const NO_PROXIES = false;
+const NO_RELAY = false;
 
 const NOW = Math.round(new Date().getTime() / 1000);
 const START_TIME = NOW - 1;
@@ -43,17 +44,21 @@ contract('StatusPay', (accounts) => {
       token = await TestERC20.new({from: network});
       block = await BlockRelay.new({from: network});
       statusPay = await StatusPay.new({from: network});
-      bucket = await StatusPayBucket.new({from: network})
+      bucket = await StatusPayBucket.new({from: network});
 
-      await token.initialize(10000, {from: network});
+      // Truffle does not handle overridden methods, using web3 directly
+      let tokenInit = token.contract.methods['initialize(uint256)'](10000);
+      let tokenGas = await tokenInit.estimateGas();
+      await tokenInit.send({from: network, gas: tokenGas});
+
       await block.initialize(500, "0xbababababaabaabaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", {from: network});
-      await statusPay.initialize(block.address, token.address, MAX_TX_DELAY_BLOCKS, {from: network});
-      await bucket.initialize(statusPay.address, block.address, START_TIME, EXPIRATION_TIME, MAX_TX_DELAY_BLOCKS, 1, 1000, {from: network});
+      await statusPay.initialize(NO_RELAY ? zeroAddress : block.address, token.address, MAX_TX_DELAY_BLOCKS, {from: network});
+      await bucket.initialize(statusPay.address, NO_RELAY ? zeroAddress : block.address, START_TIME, EXPIRATION_TIME, MAX_TX_DELAY_BLOCKS, 1, 1000, {from: network});
     } else {
       token = await deployProxy(TestERC20, [10000]);
       block = await deployProxy(BlockRelay, [500, "0xbababababaabaabaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]);
-      statusPay = await deployProxy(StatusPay, [block.address, token.address, MAX_TX_DELAY_BLOCKS], {unsafeAllowCustomTypes: true});
-      bucket = await deployProxy(StatusPayBucket, [statusPay.address, block.address, START_TIME, EXPIRATION_TIME, MAX_TX_DELAY_BLOCKS, 1, 1000], {unsafeAllowCustomTypes: true});
+      statusPay = await deployProxy(StatusPay, [NO_RELAY ? zeroAddress : block.address, token.address, MAX_TX_DELAY_BLOCKS], {unsafeAllowCustomTypes: true});
+      bucket = await deployProxy(StatusPayBucket, [statusPay.address, NO_RELAY ? zeroAddress : block.address, START_TIME, EXPIRATION_TIME, MAX_TX_DELAY_BLOCKS, 1, 1000], {unsafeAllowCustomTypes: true});
     }
 
     await token.transfer(owner, 100, {from: network});
@@ -154,7 +159,8 @@ contract('StatusPay', (accounts) => {
 
   it('requestPayment with block too old', async () => {
     try {
-      await requestPaymentTest(10, (await block.getLast.call()).toNumber() - 10);
+      const reqBlock = await blockInfo();
+      await requestPaymentTest(10, (reqBlock.number - 10));
       assert.fail("requestPayment should have failed");
     } catch (err) {
       assert.equal(err.reason, "transaction too old");
@@ -196,7 +202,8 @@ contract('StatusPay', (accounts) => {
 
   it('requestPayment with block in the future', async () => {
     try {
-      await requestPaymentTest(10, (await block.getLast.call()).toNumber() + 1);
+      const reqBlock = await blockInfo();
+      await requestPaymentTest(10, (reqBlock.number + 1));
       assert.fail("requestPayment should have failed");
     } catch (err) {
       assert.equal(err.reason, "transaction cannot be in the future");
@@ -250,10 +257,9 @@ contract('StatusPay', (accounts) => {
   });
 
   it('redeem account', async () => {
-    const blockNumber = (await block.getLast.call()).toNumber();
-    const blockHash = await block.getHash.call(blockNumber);
+    const reqBlock = await blockInfo();
 
-    const message = {blockNumber: blockNumber, blockHash: blockHash, code: REDEEM_CODE};
+    const message = {blockNumber: reqBlock.number, blockHash: reqBlock.hash, code: REDEEM_CODE};
     const sig = signRedeem(keycardKey2, message);
     await bucket.redeem(message, sig, {from: merchant});
     const account = await statusPay.keycards.call(keycard2);
@@ -261,10 +267,9 @@ contract('StatusPay', (accounts) => {
   });
 
   it('unlock account', async () => {
-    const blockNumber = (await block.getLast.call()).toNumber();
-    const blockHash = await block.getHash.call(blockNumber);
+    const reqBlock = await blockInfo();
 
-    const message = {blockNumber: blockNumber, blockHash: blockHash, code: UNLOCK_CODE};
+    const message = {blockNumber: reqBlock.number, blockHash: reqBlock.hash, code: UNLOCK_CODE};
     const sig = signUnlock(keycardKey2, message);
     await statusPay.unlockAccount(message, sig, {from: owner2});
     const account = await statusPay.owners.call(owner2);
@@ -272,10 +277,10 @@ contract('StatusPay', (accounts) => {
   });
 
   requestPaymentTest = async (value, blockNum, blockH) => {
-    const blockNumber = blockNum || (await block.getLast.call()).toNumber();
-    const blockHash = blockH || await block.getHash.call(blockNumber);
+    const reqBlock = await blockInfo(blockNum);
+    const blockHash = blockH || reqBlock.hash;
 
-    const message = {blockNumber: blockNumber, blockHash: blockHash, amount: value, to: merchant};
+    const message = {blockNumber: reqBlock.number, blockHash: blockHash, amount: value, to: merchant};
     const sig = signPaymentRequest(keycardKey, message);
     return await statusPay.requestPayment(message, sig, {from: merchant});
   };
@@ -287,6 +292,21 @@ contract('StatusPay', (accounts) => {
 
     return addrNode.getWallet().getPrivateKey();
   };
+
+  blockInfo = async (number) => {
+    if (NO_RELAY) {
+      try {
+        const block = await web3.eth.getBlock(number || "latest");
+        return {number: block.number, hash: block.hash};
+      } catch(err) {
+        return {number: number, hash: "0x0000000000000000000000000000000000000000000000000000000000000000"};
+      }
+    } else {
+      const blockNumber = number || (await block.getLast.call()).toNumber();
+      const blockHash = await block.getHash.call(blockNumber);
+      return {number: blockNumber, hash: blockHash};
+    }
+  }
 
   signPaymentRequest = (signer, message) => {
     let domain = [

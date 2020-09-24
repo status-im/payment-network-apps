@@ -4,9 +4,10 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
 import "./IBlockRelay.sol";
+import "./BlockConsumer.sol";
 import "./EVMUtils.sol";
 
-contract StatusPay {
+contract StatusPay is BlockConsumer {
   event NewPayment(address to, uint256 amount);
 
   struct Payment {
@@ -36,7 +37,6 @@ contract StatusPay {
   bytes32 public DOMAIN_SEPARATOR;
 
   uint256 public maxTxDelayInBlocks;
-  IBlockRelay public blockRelay;
   IERC20 public token;
   address public networkOwner;
   uint256 public nextAccount;
@@ -50,11 +50,11 @@ contract StatusPay {
     require(networkOwner == address(0), "already done");
 
     networkOwner = msg.sender;
-    blockRelay = IBlockRelay(_blockRelay);
+    _setBlockRelay(_blockRelay);
     token = IERC20(_token);
     nextAccount = 1;
 
-    require(_maxDelayInBlocks <= blockRelay.historySize(), "max delay cannot be more than history size");
+    require(_maxDelayInBlocks <= blockHistorySize(), "max delay cannot be more than history size");
 
     maxTxDelayInBlocks = _maxDelayInBlocks;
 
@@ -89,7 +89,7 @@ contract StatusPay {
     }
 
     account.exists = true;
-    account.lastUsedBlock = blockRelay.getLast();
+    account.lastUsedBlock = currentBlock() - 1;
     account.minBlockDistance = _minBlockDistance;
     account.maxTxAmount = _maxTxAmount;
   }
@@ -157,7 +157,7 @@ contract StatusPay {
     address signer = EVMUtils.recoverSigner(EVMUtils.eip712Hash(DOMAIN_SEPARATOR, hashUnlock(_unlock)), _signature);
     address accountAddress = keycards[signer];
 
-    EVMUtils.validateAnchorBlock(blockRelay, _unlock.blockNumber, _unlock.blockHash, maxTxDelayInBlocks);
+    validateAnchorBlock(_unlock.blockNumber, _unlock.blockHash, maxTxDelayInBlocks);
 
     // check that a keycard is associated to this account
     require(accountAddress != address(0), "no account for this Keycard");
@@ -198,7 +198,7 @@ contract StatusPay {
     // check that balance is enough for this payment
     require(payer.balance >= _payment.amount, "balance is not enough");
 
-    uint256 blockNumber = EVMUtils.validateAnchorBlock(blockRelay, _payment.blockNumber, _payment.blockHash, maxTxDelayInBlocks);
+    uint256 blockNumber = validateAnchorBlock(_payment.blockNumber, _payment.blockHash, maxTxDelayInBlocks);
 
     // check that the block number is not too near to the last one in which a tx has been processed
     require(_payment.blockNumber >= (payer.lastUsedBlock + payer.minBlockDistance), "cooldown period not expired yet");

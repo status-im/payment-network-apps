@@ -5,13 +5,13 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
 import "./StatusPay.sol";
 import "./IBlockRelay.sol";
+import "./BlockConsumer.sol";
 import "./EVMUtils.sol";
 
-contract StatusPayBucket {
+contract StatusPayBucket is BlockConsumer {
   address payable public owner;
   uint256 public redeemableSupply;
   StatusPay public statusPay;
-  IBlockRelay public blockRelay;
 
   uint256 public expirationTime;
   uint256 public startTime;
@@ -53,7 +53,7 @@ contract StatusPayBucket {
     require(_expirationTime > block.timestamp, "expiration can't be in the past");
 
     statusPay = StatusPay(_statusPay);
-    blockRelay = IBlockRelay(_blockRelay);
+    _setBlockRelay(_blockRelay);
     startTime = _startTime;
     expirationTime = _expirationTime;
     maxTxDelayInBlocks = _maxTxDelayInBlocks;
@@ -72,9 +72,9 @@ contract StatusPayBucket {
 
   function redeem(Redeem calldata _redeem, bytes calldata _sig) external {
     // validate Redeem
-    EVMUtils.validateAnchorBlock(blockRelay, _redeem.blockNumber, _redeem.blockHash, maxTxDelayInBlocks);
-    require(block.timestamp < expirationTime, "expired redeemable");
-    require(block.timestamp > startTime, "reedeming not yet started");
+    validateAnchorBlock(_redeem.blockNumber, _redeem.blockHash, maxTxDelayInBlocks);
+    require(blockTimestamp() < expirationTime, "expired redeemable");
+    require(blockTimestamp() > startTime, "reedeming not yet started");
 
     address recipient = EVMUtils.recoverSigner(EVMUtils.eip712Hash(DOMAIN_SEPARATOR, hashRedeem(_redeem)), _sig);
 
