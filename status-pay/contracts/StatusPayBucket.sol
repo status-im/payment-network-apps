@@ -3,6 +3,8 @@ pragma solidity >=0.5.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/cryptography/ECDSA.sol";
+
 import "./StatusPay.sol";
 import "./IBlockRelay.sol";
 import "./BlockConsumer.sol";
@@ -76,7 +78,7 @@ contract StatusPayBucket is BlockConsumer {
     require(blockTimestamp() < expirationTime, "expired redeemable");
     require(blockTimestamp() > startTime, "reedeming not yet started");
 
-    address recipient = EVMUtils.recoverSigner(EVMUtils.eip712Hash(DOMAIN_SEPARATOR, hashRedeem(_redeem)), _sig);
+    address recipient = ECDSA.recover(EVMUtils.eip712Hash(DOMAIN_SEPARATOR, hashRedeem(_redeem)), _sig);
 
     Redeemable storage redeemable = redeemables[recipient];
     require(redeemable.recipient == recipient, "not found");

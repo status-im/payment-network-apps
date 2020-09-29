@@ -3,6 +3,8 @@ pragma solidity >=0.5.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/cryptography/ECDSA.sol";
+
 import "./IBlockRelay.sol";
 import "./BlockConsumer.sol";
 import "./EVMUtils.sol";
@@ -154,7 +156,7 @@ contract StatusPay is BlockConsumer {
 
   function unlockAccount(Unlock memory _unlock, bytes memory _signature) public {
     require(owners[msg.sender] == address(0), "this owner already has an account");
-    address signer = EVMUtils.recoverSigner(EVMUtils.eip712Hash(DOMAIN_SEPARATOR, hashUnlock(_unlock)), _signature);
+    address signer = ECDSA.recover(EVMUtils.eip712Hash(DOMAIN_SEPARATOR, hashUnlock(_unlock)), _signature);
     address accountAddress = keycards[signer];
 
     validateAnchorBlock(_unlock.blockNumber, _unlock.blockHash, maxTxDelayInBlocks);
@@ -171,7 +173,7 @@ contract StatusPay is BlockConsumer {
   }
 
   function requestPayment(Payment memory _payment, bytes memory _signature) public {
-    address signer = EVMUtils.recoverSigner(EVMUtils.eip712Hash(DOMAIN_SEPARATOR, hashPayment(_payment)), _signature);
+    address signer = ECDSA.recover(EVMUtils.eip712Hash(DOMAIN_SEPARATOR, hashPayment(_payment)), _signature);
     Account storage payer = accounts[keycards[signer]];
 
     // allow direct payment without Keycard from owner
