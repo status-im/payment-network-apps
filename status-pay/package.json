@@ -22,7 +22,7 @@
     "ethers": "^5.0.14"
   },
   "devDependencies": {
-    "@eth-optimism/ovm-toolchain": "^0.0.1-alpha.2",
+    "@eth-optimism/ovm-toolchain": "^0.0.1-alpha.4",
     "@openzeppelin/truffle-upgrades": "^1.0.2",
     "bip39": "^3.0.2",
     "ethereumjs-wallet": "^1.0.0"

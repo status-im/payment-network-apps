@@ -121,14 +121,6 @@ contract StatusPay is BlockConsumer {
     keycards[_keycard] = address(0);
   }
 
-  function topup(address _to, uint256 _amount) public {
-    Account storage topped = accounts[owners[_to]];
-    require(topped.exists, "account does not exist");
-    require(token.transferFrom(msg.sender, address(this), _amount), "transfer failed");
-
-    topped.balance += _amount;
-  }
-
   function topupKeycard(address _keycard, uint256 _amount) public {
     _topup(keycards[_keycard], _amount);
   }
@@ -145,13 +137,13 @@ contract StatusPay is BlockConsumer {
     topped.balance += _amount;
   }
 
-  function withdraw(address _to, uint256 _amount) public {
+  function withdraw(uint256 _amount) public {
     Account storage exiting = accounts[owners[msg.sender]];
     require(exiting.exists, "account does not exist");
     require(exiting.balance >= _amount, "not enough balance");
 
     exiting.balance -= _amount;
-    require(token.transfer(_to, _amount), "transfer failed");
+    require(token.transfer(msg.sender, _amount), "transfer failed");
   }
 
   function unlockAccount(Unlock memory _unlock, bytes memory _signature) public {

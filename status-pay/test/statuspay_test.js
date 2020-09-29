@@ -17,7 +17,7 @@ const hdk = hdkey.fromMasterSeed(seed);
 
 const CHAIN_ID = 1; //for now 1
 const NO_PROXIES = false;
-const NO_RELAY = false;
+const NO_RELAY = true;
 
 const NOW = Math.round(new Date().getTime() / 1000);
 const START_TIME = NOW - 1;
@@ -212,7 +212,7 @@ contract('StatusPay', (accounts) => {
 
 
   it('withdraw', async () => {
-    await statusPay.withdraw(owner, 80, {from: owner});
+    await statusPay.withdraw(80, {from: owner});
 
     let account = await statusPay.owners.call(owner);
     assert.equal((await token.balanceOf.call(owner)).toNumber(), 80);
@@ -221,7 +221,7 @@ contract('StatusPay', (accounts) => {
 
   it('withdraw more than balance allows', async () => {
     try {
-      await statusPay.withdraw(owner, 11, {from: owner});
+      await statusPay.withdraw(11, {from: owner});
       assert.fail("withdraw should have failed");
     } catch (err) {
       assert.equal(err.reason, "not enough balance");
@@ -234,7 +234,7 @@ contract('StatusPay', (accounts) => {
 
   it('withdraw non existing account', async () => {
     try {
-      await statusPay.withdraw(network, 10, {from: network});
+      await statusPay.withdraw(10, {from: network});
       assert.fail("withdraw should have failed");
     } catch (err) {
       assert.equal(err.reason, "account does not exist");
