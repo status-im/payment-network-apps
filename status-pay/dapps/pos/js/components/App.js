@@ -1,15 +1,12 @@
 import React from 'react';
 
 import Pos from "../containers/Pos"
-import KeycardWalletFactory from 'Embark/contracts/KeycardWalletFactory';
 
 import { withStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import CircularProgress from '@material-ui/core/CircularProgress';
-
-import { compressedAddress } from '../utils';
 
 const styles = theme => ({
   loading: {
@@ -36,9 +33,6 @@ const App = (props) => {
         <Toolbar>
           <Typography variant="h6" color="inherit">
             Keycard POS
-            <Typography variant="caption" color="inherit">
-              {compressedAddress(KeycardWalletFactory.address)} {networkText}
-            </Typography>
           </Typography>
         </Toolbar>
       </AppBar>

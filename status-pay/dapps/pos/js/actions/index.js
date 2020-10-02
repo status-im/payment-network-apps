@@ -1,9 +1,10 @@
-const StatusPay = artifacts.require('StatusPay');
+const StatusPay = artifacts.require('StatusPay'); // TODO: load JSON
 
 import { recoverTypedSignature } from 'eth-sig-util';
 
 const addressZero = "0x0000000000000000000000000000000000000000";
-const tokenAddress = "0xc55cF4B03948D7EBc8b9E8BAD92643703811d162";
+
+const statusPay; //TODO: initialize with web3/JSON
 
 export const NEW_WALLET = 'NEW_WALLET';
 export const newWallet = () => ({
@@ -209,11 +210,11 @@ export const paymentRequested = () => ({
   type: PAYMENT_REQUESTED,
 });
 
-export const sendPaymentRequest = (walletContract, message, sig) => {
+export const sendPaymentRequest = (message, sig) => {
   return async (dispatch) => {
     try {
       dispatch(requestingPayment())
-      const requestPayment = await walletContract.methods.requestPayment(message, sig);
+      const requestPayment = await statusPay.requestPayment(message, sig);
       const gas = await requestPayment.estimateGas();
       const receipt = await requestPayment.send({
         gas: gas
@@ -230,24 +231,12 @@ export const loadWallet = (walletAddress, message, sig) => {
   return async (dispatch) => {
     dispatch(loadingWallet())
 
-    const jsonInterface = KeycardWallet.options.jsonInterface;
-    const walletContract = new EmbarkJS.Blockchain.Contract({
-      abi: jsonInterface,
-      address: walletAddress,
-    });
-    walletContract.address = walletAddress;
-
-    const erc20Contract = new EmbarkJS.Blockchain.Contract({
-      abi: IERC20.options.jsonInterface,
-      address: tokenAddress,
-    });
-    erc20Contract.address = tokenAddress;
-
-    const balance = await erc20Contract.methods.balanceOf(walletAddress).call();
-    const maxTxValue = await walletContract.methods.tokenMaxTxAmount(tokenAddress).call();
+    const account = await statusPay.accounts(walletAddress).call();
+    const balance = account.balance.toNumber();
+    const maxTxValue = account.maxTxAmount.toNumber();
 
     dispatch(walletLoaded(balance, maxTxValue))
-    dispatch(sendPaymentRequest(walletContract, message, sig))
+    dispatch(sendPaymentRequest(message, sig))
   };
 }
 
@@ -277,7 +266,10 @@ export const paymentAmountValueChange = (value) => ({
 export const findWallet = (keycardAddress, message, sig) => {
   return async (dispatch) => {
     dispatch(findingWallet());
-    KeycardWalletFactory.methods.keycardsWallets(keycardAddress).call()
+    assert.equal((await token.balanceOf.call(owner)).toNumber(), 0);
+    assert.equal((await statusPay.accounts.call(account)).balance.toNumber(), 100);
+
+    statusPay.keycards.call(keycardAddress)
       .then((address) => {
         //FIXME: if 0x00, display error
         if (address === addressZero) {
