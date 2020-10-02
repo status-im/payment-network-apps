@@ -171,10 +171,8 @@ contract StatusPay is BlockConsumer {
     // allow direct payment without Keycard from owner
     if (!payer.exists) {
       payer = accounts[owners[signer]];
+      require(payer.exists, "no account for this Keycard");
     }
-
-    // check that a keycard is associated to this account
-    require(payer.exists, "no account for this Keycard");
 
     // check that the payee exists
     Account storage payee = accounts[_payment.to];
@@ -182,9 +180,8 @@ contract StatusPay is BlockConsumer {
     // allow payment through owner address
     if (!payee.exists) {
       payee = accounts[owners[_payment.to]];
+      require(payee.exists, "payee account does not exist");
     }
-
-    require(payee.exists, "payee account does not exist");
 
     // check that _payment.amount is not greater than the maxTxValue for this currency
     require(_payment.amount <= payer.maxTxAmount, "amount not allowed");

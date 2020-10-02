@@ -12,17 +12,26 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@eth-optimism/solc": "^0.5.16-alpha.2",
-    "@openzeppelin/cli": "^2.8.2",
-    "@openzeppelin/contracts-ethereum-package": "^2.5.0",
     "eth-sig-util": "^2.5.3",
     "minimist": "^1.2.5",
     "solc": "0.5.16",
-    "truffle": "^5.1.44",
-    "ethers": "^5.0.14"
+    "truffle": "^5.1.46",
+    "ethers": "^5.0.14",
+    "@material-ui/core": "^3.9.3",
+    "@material-ui/icons": "^3.0.2",
+    "@material-ui/styles": "^3.0.0-alpha.10",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6",
+    "react-redux": "^6.0.1",
+    "redux": "^4.0.1",
+    "redux-thunk": "^2.3.0",
+    "typeface-roboto": "^0.0.54"
   },
   "devDependencies": {
-    "@eth-optimism/ovm-toolchain": "^0.0.1-alpha.4",
+    "@eth-optimism/solc": "^0.5.16-alpha.2",
+    "@openzeppelin/cli": "^2.8.2",
+    "@openzeppelin/contracts-ethereum-package": "^2.5.0",
+    "@eth-optimism/ovm-toolchain": "^0.0.1-alpha.7",
     "@openzeppelin/truffle-upgrades": "^1.0.2",
     "bip39": "^3.0.2",
     "ethereumjs-wallet": "^1.0.0"
