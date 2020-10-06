@@ -1,10 +1,10 @@
-const StatusPay = artifacts.require('StatusPay'); // TODO: load JSON
+import StatusPay from '../../build/contracts/StatusPay.json';
 
 import { recoverTypedSignature } from 'eth-sig-util';
 
 const addressZero = "0x0000000000000000000000000000000000000000";
-
-const statusPay; //TODO: initialize with web3/JSON
+const statusPayAddress = "0x0000000000000000000000000000000000000000";
+let statusPay;
 
 export const NEW_WALLET = 'NEW_WALLET';
 export const newWallet = () => ({
@@ -163,7 +163,7 @@ export const enableEthereum = () => {
       dispatch(ethereumLoaded());
       window.setTimeout(() => {
         dispatch(loadNetworkID());
-        dispatch(loadOwner())
+        dispatch(loadOwner());
       }, 200)
     }
   } else {
@@ -173,7 +173,8 @@ export const enableEthereum = () => {
 
 export const loadOwner = () => {
   return (dispatch) => {
-    dispatch(loadingOwner())
+    dispatch(loadingOwner());
+    statusPay = web3.eth.Contract(StatusPay.abi, statusPayAddress);
     return web3.eth.getAccounts()
       .then((accounts) => {
         const owner = accounts[0];
