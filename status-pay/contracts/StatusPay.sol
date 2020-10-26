@@ -3,6 +3,7 @@ pragma solidity >=0.5.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20Detailed.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/cryptography/ECDSA.sol";
 
 import "./IBlockRelay.sol";
@@ -69,6 +70,38 @@ contract StatusPay is BlockConsumer {
     ));
   }
 
+  function totalSupply() external view returns (uint256) {
+    return token.balanceOf(address(this));
+  }
+
+  function balanceOf(address _account) external view returns (uint256) {
+    Account storage account = accounts[_account];
+
+    if (!account.exists) {
+      account = accounts[owners[_account]];
+
+      if (!account.exists) {
+        account = accounts[keycards[_account]];
+      }
+    }
+
+    return account.balance;
+  }
+
+  function name() public view returns (string memory) {
+    string memory sym = ERC20Detailed(address(token)).symbol();
+    return string(abi.encodePacked(sym, " in Status Pay"));
+  }
+
+  function symbol() public view returns (string memory) {
+    string memory sym = ERC20Detailed(address(token)).symbol();
+    return string(abi.encodePacked("s", sym));
+  }
+
+  function decimals() public view returns (uint8) {
+    return ERC20Detailed(address(token)).decimals();
+  }
+
   function createAccount(address _keycard, uint256 _minBlockDistance, uint256 _maxTxAmount) public {
     require(owners[msg.sender] == address(0), "already exists");
     owners[msg.sender] = address(nextAccount);
@@ -102,6 +135,18 @@ contract StatusPay is BlockConsumer {
 
     owners[_newOwner] = owners[msg.sender];
     owners[msg.sender] = address(0);
+  }
+
+  function setMaxTxAmount(uint256 _amount) public {
+    Account storage account = accounts[owners[msg.sender]];
+    require(account.exists, "no account found");
+    account.maxTxAmount = _amount;
+  }
+
+  function setMinBlockDistance(uint256 _distance) public {
+    Account storage account = accounts[owners[msg.sender]];
+    require(account.exists, "no account found");
+    account.minBlockDistance = _distance;
   }
 
   function addKeycard(address _keycard) public {

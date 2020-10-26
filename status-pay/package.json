@@ -28,10 +28,10 @@
     "typeface-roboto": "^0.0.54"
   },
   "devDependencies": {
-    "@eth-optimism/solc": "^0.5.16-alpha.2",
+    "@eth-optimism/solc": "^0.5.16-alpha.3",
     "@openzeppelin/cli": "^2.8.2",
     "@openzeppelin/contracts-ethereum-package": "^2.5.0",
-    "@eth-optimism/ovm-toolchain": "^0.0.1-alpha.7",
+    "@eth-optimism/ovm-toolchain": "^0.0.1-alpha.11",
     "@openzeppelin/truffle-upgrades": "^1.0.2",
     "bip39": "^3.0.2",
     "ethereumjs-wallet": "^1.0.0"
