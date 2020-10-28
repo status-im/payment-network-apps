@@ -11,7 +11,9 @@ import "./BlockConsumer.sol";
 import "./EVMUtils.sol";
 
 contract StatusPay is BlockConsumer {
-  event NewPayment(address to, uint256 amount);
+  event NewPayment(address from, address to, uint256 amount);
+  event TopUp(address account, uint256 amount);
+  event Withdraw(address account, uint256 amount);
 
   struct Payment {
     uint256 blockNumber;
@@ -70,22 +72,35 @@ contract StatusPay is BlockConsumer {
     ));
   }
 
-  function totalSupply() external view returns (uint256) {
+  function totalSupply() public view returns (uint256) {
     return token.balanceOf(address(this));
   }
 
-  function balanceOf(address _account) external view returns (uint256) {
-    Account storage account = accounts[_account];
+  function balanceOf(address _account) public view returns (uint256) {
+    (, Account memory account) = _resolveAccount(_account);
+    return account.balance;
+  }
+
+  function resolveAccount(address _addressOrOwnerOrKeycard) public view returns (address) {
+    (address addr, ) = _resolveAccount(_addressOrOwnerOrKeycard);
+    return addr;
+  }
+
+  function _resolveAccount(address _addressOrOwnerOrKeycard) internal view returns (address, Account storage) {
+    address accountAddress = _addressOrOwnerOrKeycard;
+    Account storage account = accounts[accountAddress];
 
     if (!account.exists) {
-      account = accounts[owners[_account]];
+      accountAddress = owners[_addressOrOwnerOrKeycard];
+      account = accounts[accountAddress];
 
       if (!account.exists) {
-        account = accounts[keycards[_account]];
+        accountAddress = keycards[_addressOrOwnerOrKeycard];
+        account = accounts[accountAddress];
       }
     }
 
-    return account.balance;
+    return (accountAddress, account);
   }
 
   function name() public view returns (string memory) {
@@ -180,15 +195,18 @@ contract StatusPay is BlockConsumer {
     require(token.transferFrom(msg.sender, address(this), _amount), "transfer failed");
 
     topped.balance += _amount;
+    emit TopUp(_id, _amount);
   }
 
   function withdraw(uint256 _amount) public {
-    Account storage exiting = accounts[owners[msg.sender]];
+    address acc = owners[msg.sender];
+    Account storage exiting = accounts[acc];
     require(exiting.exists, "account does not exist");
     require(exiting.balance >= _amount, "not enough balance");
 
     exiting.balance -= _amount;
     require(token.transfer(msg.sender, _amount), "transfer failed");
+    emit Withdraw(acc, _amount);
   }
 
   function unlockAccount(Unlock memory _unlock, bytes memory _signature) public {
@@ -211,22 +229,11 @@ contract StatusPay is BlockConsumer {
 
   function requestPayment(Payment memory _payment, bytes memory _signature) public {
     address signer = ECDSA.recover(EVMUtils.eip712Hash(DOMAIN_SEPARATOR, hashPayment(_payment)), _signature);
-    Account storage payer = accounts[keycards[signer]];
+    (address payerAddress, Account storage payer) = _resolveAccount(signer);
+    require(payer.exists, "payer account not found");
 
-    // allow direct payment without Keycard from owner
-    if (!payer.exists) {
-      payer = accounts[owners[signer]];
-      require(payer.exists, "no account for this Keycard");
-    }
-
-    // check that the payee exists
-    Account storage payee = accounts[_payment.to];
-
-    // allow payment through owner address
-    if (!payee.exists) {
-      payee = accounts[owners[_payment.to]];
-      require(payee.exists, "payee account does not exist");
-    }
+    (address payeeAddress, Account storage payee) = _resolveAccount(_payment.to);
+    require(payee.exists, "payee account does not exist");
 
     // check that _payment.amount is not greater than the maxTxValue for this currency
     require(_payment.amount <= payer.maxTxAmount, "amount not allowed");
@@ -245,7 +252,7 @@ contract StatusPay is BlockConsumer {
 
     // set new baseline block for checks
     payer.lastUsedBlock = blockNumber;
-    emit NewPayment(_payment.to, _payment.amount);
+    emit NewPayment(payerAddress, payeeAddress, _payment.amount);
   }
 
   function hashPayment(Payment memory _payment) internal pure returns (bytes32) {

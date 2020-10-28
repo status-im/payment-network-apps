@@ -73,7 +73,7 @@ contract('StatusPay', (accounts) => {
       await requestPaymentTest(10);
       assert.fail("requestPayment should have failed");
     } catch (err) {
-      assert.equal(err.reason, "no account for this Keycard");
+      assert.equal(err.reason, "payer account not found");
     }
   });
 
@@ -181,11 +181,12 @@ contract('StatusPay', (accounts) => {
 
     const event = receipt.logs.find(element => element.event.match('NewPayment'));
 
-    assert.equal(event.args.to, merchant);
-    assert.equal(event.args.amount, 10);
-
     let buyerAcc = await statusPay.owners.call(owner);
     let merchantAcc = await statusPay.owners.call(merchant);
+
+    assert.equal(event.args.from, buyerAcc);
+    assert.equal(event.args.to, merchantAcc);
+    assert.equal(event.args.amount, 10);
 
     assert.equal((await statusPay.accounts.call(buyerAcc)).balance.toNumber(), 90);
     assert.equal((await statusPay.accounts.call(merchantAcc)).balance.toNumber(), 10);
