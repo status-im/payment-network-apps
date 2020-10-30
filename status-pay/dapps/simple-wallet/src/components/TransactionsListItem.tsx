@@ -69,10 +69,9 @@ const useStyles = makeStyles(theme => ({
 
 const icon = (event: string, className: any) => {
   switch(event) {
-    case "TopUp":
+    case "to":
       return <TransactionInIcon className={className} />
-    case "NewPayment":
-    case "Withdraw":
+    case "from":
       return <TransactionOutIcon className={className} />
     default:
       return <TransactionUnknownIcon />
@@ -120,17 +119,16 @@ const TransactionsListItem = (props: Props) => {
     <span className={classes.block}>to: {toAddress}</span>
   </span>;
 
-  const [avatarClass, iconClass] = (event => {
-    switch(event) {
-      case "TopUp":
+  const [avatarClass, iconClass] = (direction => {
+    switch(direction) {
+      case "to":
         return [classes.avatarIn, classes.iconIn];
-      case "NewPayment":
-      case "Withdraw":
+      case "from":
         return [classes.avatarOut, classes.iconOut];
       default:
         return [classes.avatar, classes.icon];
     }
-  })(tx.event)
+  })(tx.direction)
 
   return (
     <>
@@ -140,7 +138,7 @@ const TransactionsListItem = (props: Props) => {
             <Avatar className={avatarClass}>
               {(tx.pending === true || tx.pending === undefined)
                 && <CircularProgress color="secondary" className={classes.avatarLoading}/>}
-              {icon(tx.event, iconClass)}
+              {icon(tx.direction, iconClass)}
             </Avatar>
           </Fade>
         </ListItemAvatar>

@@ -11,9 +11,9 @@ import "./BlockConsumer.sol";
 import "./EVMUtils.sol";
 
 contract StatusPay is BlockConsumer {
-  event NewPayment(address from, address to, uint256 amount);
-  event TopUp(address account, uint256 amount);
-  event Withdraw(address account, uint256 amount);
+  event NewPayment(address indexed from, address indexed to, uint256 amount);
+  event TopUp(address indexed to, uint256 amount);
+  event Withdraw(address indexed from, uint256 amount);
 
   struct Payment {
     uint256 blockNumber;

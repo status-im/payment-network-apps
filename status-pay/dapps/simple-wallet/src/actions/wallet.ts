@@ -217,7 +217,7 @@ export const loadWallet = async (web3: Web3, dispatch: Dispatch, getState: () =>
 const loadWalletAddress = (web3: Web3, statusPay: Contract, keycardAddress: string) => {
   return async (dispatch: Dispatch) => {
     dispatch(loadingWalletAddress(keycardAddress));
-    return statusPay.methods.keycards(keycardAddress).call().then((address: string) => {
+    return statusPay.methods.resolveAccount(keycardAddress).call().then((address: string) => {
      if (isEmptyAddress(address)) {
        dispatch(keycardNotFound(address));
        throw({

@@ -10,6 +10,7 @@ import {
 export interface TransactionState {
   id: string
   blockNumber: number
+  direction: string
   event: string
   transactionHash: string
   pending: boolean | undefined
@@ -29,6 +30,7 @@ export interface TransactionsState {
 const newTransactionState = (): TransactionState => ({
   id: "",
   blockNumber: 0,
+  direction: "",
   event: "",
   transactionHash: "",
   pending: undefined,
@@ -80,6 +82,7 @@ export const transactionsReducer = (state: TransactionsState = initialState, act
             ...txState,
             id: action.id,
             blockNumber: action.blockNumber,
+            direction: action.direction,
             event: action.event,
             transactionHash: action.transactionHash,
             pending: action.pending,
